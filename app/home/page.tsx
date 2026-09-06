@@ -12,11 +12,12 @@ export default function HomePage() {
   const [cases, setCases] = useState<any[]>([]);
   const [identity, setIdentity] = useState<any>(null);
   const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("ai");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchInitialData();
-  }, []);
+  }, [sort]);
 
   const fetchInitialData = async () => {
     setLoading(true);
@@ -31,8 +32,8 @@ export default function HomePage() {
       const identityData = await identityRes.json();
       if (identityData.identity) setIdentity(identityData.identity);
 
-      // 3. Fetch Recent Cases
-      const casesRes = await fetch("/api/files?limit=25");
+      // 3. Fetch Cases with AI ranking
+      const casesRes = await fetch(`/api/files?sort=${sort}&limit=25`);
       const casesData = await casesRes.json();
       if (casesData.cases) setCases(casesData.cases);
     } catch (e) {
@@ -46,7 +47,9 @@ export default function HomePage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const url = search ? `/api/files?search=${encodeURIComponent(search)}` : "/api/files?limit=25";
+      const url = search
+        ? `/api/files?search=${encodeURIComponent(search)}&sort=${sort}&limit=25`
+        : `/api/files?sort=${sort}&limit=25`;
       const res = await fetch(url);
       const data = await res.json();
       if (data.cases) setCases(data.cases);
@@ -78,6 +81,16 @@ export default function HomePage() {
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2" />
           </div>
           <div className="flex gap-1.5">
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="py-1.5 px-2.5 text-xs bg-white dark:bg-slate-900 border border-[#b8b3a5] dark:border-slate-700 font-mono rounded-xs text-slate-800 dark:text-slate-200 focus:outline-hidden"
+              title="Algorithm Ranking Order"
+            >
+              <option value="ai">AI Priority Rank</option>
+              <option value="date_desc">Newest First</option>
+              <option value="date_asc">Oldest First</option>
+            </select>
             <button
               type="submit"
               className="btn-metallic px-4 py-1.5 text-xs font-serif font-bold rounded-xs cursor-pointer"

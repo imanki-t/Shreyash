@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Shield, Eye, Paperclip, FileText } from "lucide-react";
+import { Shield, Eye, Paperclip, FileText, Cpu, Sparkles } from "lucide-react";
 
 export interface CaseItem {
   _id: string;
@@ -33,6 +33,8 @@ export interface CaseItem {
   };
   isRedacted: boolean;
   createdAt: string;
+  aiRank?: number;
+  aiScore?: number;
 }
 
 interface IncidentsTableProps {
@@ -74,9 +76,15 @@ export default function IncidentsTable({ cases, loading = false }: IncidentsTabl
     <div className="bg-white dark:bg-[#111822] border-2 border-[#b8b3a5] dark:border-[#273549] shadow-xs rounded-xs overflow-hidden font-sans">
       {/* Table Header Ribbon */}
       <div className="bg-[#071931] text-white px-3 py-2 border-b-2 border-[#c5a059] flex items-center justify-between">
-        <h3 className="font-serif font-bold text-xs uppercase tracking-wider text-[#d8c396]">
-          RECENTLY FILED INCIDENT EXHIBITS
-        </h3>
+        <div className="flex items-center gap-2">
+          <h3 className="font-serif font-bold text-xs uppercase tracking-wider text-[#d8c396]">
+            RECENTLY FILED INCIDENT EXHIBITS
+          </h3>
+          <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-xs bg-[#0d274d] border border-[#273549] text-[9px] font-mono text-cyan-300">
+            <Cpu className="w-2.5 h-2.5 text-cyan-400" />
+            AI RANKING ACTIVE
+          </span>
+        </div>
         <span className="font-mono text-[10px] text-slate-400">
           {cases.length} RECORDS CATALOGED
         </span>
@@ -90,6 +98,7 @@ export default function IncidentsTable({ cases, loading = false }: IncidentsTabl
               <th className="py-2.5 px-3 font-semibold">Case File ID</th>
               <th className="py-2.5 px-3 font-semibold">Filing Date</th>
               <th className="py-2.5 px-3 font-semibold">Incident Title & Category</th>
+              <th className="py-2.5 px-3 font-semibold">AI Priority</th>
               <th className="py-2.5 px-3 font-semibold">Clearance</th>
               <th className="py-2.5 px-3 font-semibold">Investigator</th>
               <th className="py-2.5 px-3 font-semibold text-right">Status / Action</th>
@@ -139,6 +148,16 @@ export default function IncidentsTable({ cases, loading = false }: IncidentsTabl
                         </span>
                       )}
                     </div>
+                  </td>
+                  <td className="py-2.5 px-3">
+                    {c.aiScore !== undefined ? (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-[10px] font-mono text-slate-700 dark:text-slate-300 rounded-xs">
+                        <Sparkles className="w-2.5 h-2.5 text-amber-500" />
+                        <span>{c.aiScore}%</span>
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 text-[10px]">—</span>
+                    )}
                   </td>
                   <td className="py-2.5 px-3">
                     <span

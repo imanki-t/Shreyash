@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Printer, Edit3, ShieldAlert, Check, X, Quote } from "lucide-react";
 import { useSession } from "next-auth/react";
 import RedactedText from "@/components/RedactedText";
-import { ADMIN_EMAIL } from "@/lib/auth";
+ 
 
 export default function IdentityPage() {
   const { data: session } = useSession();
@@ -34,7 +34,7 @@ export default function IdentityPage() {
   };
 
   const isMasterAdmin =
-    session?.user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+    (session?.user as any)?.role === "admin" || (session?.user as any)?.isAdmin === true;
 
   const handlePrint = () => {
     window.print();
@@ -300,7 +300,7 @@ export default function IdentityPage() {
 
             {!isMasterAdmin && (
               <div className="p-2 bg-amber-50 border border-amber-300 text-amber-800 text-xs rounded-xs">
-                Notice: Permanent modifications to the master dossier require Lead Directorate clearance ({ADMIN_EMAIL}). Authenticate via the top right clearance terminal.
+                Notice: Permanent modifications to the master dossier require Lead Directorate clearance  . Authenticate via the top right clearance terminal.
               </div>
             )}
 

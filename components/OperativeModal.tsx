@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import Link from "next/link";
 import { Shield, Key, Moon, Sun, Monitor, LogOut, CheckCircle2 } from "lucide-react";
-import { ADMIN_EMAIL } from "@/lib/auth";
 
 interface OperativeModalProps {
   isOpen: boolean;
@@ -71,7 +70,8 @@ export default function OperativeModal({ isOpen, onClose }: OperativeModalProps)
   if (!isOpen) return null;
 
   const isMasterAdmin =
-    session?.user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+    (session?.user as any)?.role === "admin" ||
+    (session?.user as any)?.isAdmin === true;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
@@ -79,9 +79,9 @@ export default function OperativeModal({ isOpen, onClose }: OperativeModalProps)
       <div className="absolute inset-0" onClick={onClose} />
 
       {/* Modal Box */}
-      <div className="relative w-full max-w-md bg-[#fdfbf7] dark:bg-[#111822] border-2 border-[#7c8798] dark:border-[#273549] shadow-2xl rounded-xs overflow-hidden z-10 font-sans">
+      <div className="relative w-full max-w-md bg-[#0a182d] border-2 border-[#1e3a63] text-white shadow-2xl rounded-xs overflow-hidden z-10 font-sans">
         {/* Header */}
-        <div className="bg-[#071931] text-white px-4 py-3 border-b-2 border-[#c5a059] flex items-center justify-between">
+        <div className="bg-[#051224] text-white px-4 py-3 border-b-2 border-[#c5a059] flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Shield className="w-5 h-5 text-[#c5a059]" />
             <h3 className="font-serif font-bold text-sm tracking-wider uppercase text-[#f3e6c8]">
@@ -90,16 +90,16 @@ export default function OperativeModal({ isOpen, onClose }: OperativeModalProps)
           </div>
           <button
             onClick={onClose}
-            className="text-slate-300 hover:text-white font-mono text-sm px-1.5 py-0.5 border border-slate-600 hover:border-slate-400 rounded-xs"
+            className="text-slate-300 hover:text-white font-mono text-sm px-1.5 py-0.5 border border-slate-600 hover:border-slate-400 rounded-xs cursor-pointer"
           >
             ✕
           </button>
         </div>
 
-        <div className="p-5 space-y-5 text-xs text-slate-800 dark:text-slate-200">
+        <div className="p-5 space-y-5 text-xs text-slate-200">
           {/* Section 1: Active Session or Google Sign In */}
           {session?.user ? (
-            <div className="p-3 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xs">
+            <div className="p-3 bg-[#0c2242] border border-[#1e3a63] rounded-xs">
               <div className="flex items-center gap-3">
                 {session.user.image && (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -110,10 +110,10 @@ export default function OperativeModal({ isOpen, onClose }: OperativeModalProps)
                   />
                 )}
                 <div>
-                  <div className="font-bold text-sm text-slate-900 dark:text-white">
+                  <div className="font-bold text-sm text-white">
                     {session.user.name}
                   </div>
-                  <div className="font-mono text-[11px] text-slate-500">
+                  <div className="font-mono text-[11px] text-slate-400">
                     {session.user.email}
                   </div>
                   <div className="mt-1 inline-block">
@@ -131,7 +131,7 @@ export default function OperativeModal({ isOpen, onClose }: OperativeModalProps)
               </div>
 
               {isMasterAdmin && (
-                <div className="mt-3 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <div className="mt-3 pt-2 border-t border-[#1e3a63]">
                   <Link
                     href="/admin"
                     onClick={onClose}
@@ -144,7 +144,7 @@ export default function OperativeModal({ isOpen, onClose }: OperativeModalProps)
 
               <button
                 onClick={() => signOut()}
-                className="mt-3 w-full py-1.5 px-3 flex items-center justify-center gap-2 border border-rose-300 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 font-bold uppercase tracking-wider rounded-xs transition"
+                className="mt-3 w-full py-1.5 px-3 flex items-center justify-center gap-2 border border-rose-900/60 bg-rose-950/40 text-rose-300 hover:bg-rose-900/60 font-bold uppercase tracking-wider rounded-xs transition cursor-pointer"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 Terminate Authenticated Session
@@ -152,14 +152,13 @@ export default function OperativeModal({ isOpen, onClose }: OperativeModalProps)
             </div>
           ) : (
             <div>
-              <label className="block font-serif font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider mb-1.5 text-[11px]">
+              <label className="block font-serif font-bold text-slate-200 uppercase tracking-wider mb-1.5 text-[11px]">
                 AUTHENTICATE AGENT SESSION
               </label>
               <button
                 onClick={() => signIn("google")}
                 className="w-full py-2 px-3 btn-metallic flex items-center justify-center gap-2 cursor-pointer"
               >
-                {/* 2000s Vintage Styled Google G Icon */}
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
                   <path
                     fill="#4285F4"
@@ -186,13 +185,13 @@ export default function OperativeModal({ isOpen, onClose }: OperativeModalProps)
           )}
 
           {/* Section 2: Covert Clearance / Anonymous Codename */}
-          <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
-            <label className="block font-serif font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider mb-1.5 text-[11px]">
+          <div className="pt-3 border-t border-[#1e3a63]">
+            <label className="block font-serif font-bold text-slate-200 uppercase tracking-wider mb-1.5 text-[11px]">
               OR MAINTAIN COVERT CLEARANCE
             </label>
             <form onSubmit={handleSaveCovert} className="space-y-2.5">
               <div>
-                <span className="block text-[11px] text-slate-500 font-mono mb-1">
+                <span className="block text-[11px] text-slate-400 font-mono mb-1">
                   Operative Codename (Public Alias):
                 </span>
                 <input
@@ -200,12 +199,12 @@ export default function OperativeModal({ isOpen, onClose }: OperativeModalProps)
                   value={codename}
                   onChange={(e) => setCodename(e.target.value)}
                   placeholder="e.g. Agent Phoenix-09"
-                  className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 font-mono rounded-xs focus:outline-hidden focus:border-[#071931]"
+                  className="w-full px-2.5 py-1.5 text-xs bg-[#071324] border border-[#1e3a63] font-mono rounded-xs focus:outline-hidden focus:border-[#c5a059] text-white"
                 />
               </div>
 
               <div>
-                <span className="block text-[11px] text-slate-500 font-mono mb-1">
+                <span className="block text-[11px] text-slate-400 font-mono mb-1">
                   Clearance Passkey (For Editing/Redacting Your Submissions):
                 </span>
                 <div className="relative">
@@ -214,9 +213,9 @@ export default function OperativeModal({ isOpen, onClose }: OperativeModalProps)
                     value={passkey}
                     onChange={(e) => setPasskey(e.target.value)}
                     placeholder="Enter secret passphrase"
-                    className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 font-mono rounded-xs focus:outline-hidden focus:border-[#071931]"
+                    className="w-full px-2.5 py-1.5 text-xs bg-[#071324] border border-[#1e3a63] font-mono rounded-xs focus:outline-hidden focus:border-[#c5a059] text-white"
                   />
-                  <Key className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2" />
+                  <Key className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-2" />
                 </div>
               </div>
 
@@ -231,7 +230,7 @@ export default function OperativeModal({ isOpen, onClose }: OperativeModalProps)
                   <button
                     type="button"
                     onClick={handleClearCovert}
-                    className="px-2 py-1.5 text-xs text-slate-500 hover:text-rose-600 border border-slate-300 dark:border-slate-700 rounded-xs"
+                    className="px-2 py-1.5 text-xs text-slate-400 hover:text-rose-400 border border-[#1e3a63] rounded-xs cursor-pointer"
                   >
                     Reset
                   </button>
@@ -239,7 +238,7 @@ export default function OperativeModal({ isOpen, onClose }: OperativeModalProps)
               </div>
 
               {covertSuccess && (
-                <div className="text-[11px] text-emerald-600 font-mono flex items-center gap-1 mt-1">
+                <div className="text-[11px] text-emerald-400 font-mono flex items-center gap-1 mt-1">
                   <CheckCircle2 className="w-3 h-3" /> Covert operative profile updated.
                 </div>
               )}
@@ -247,22 +246,22 @@ export default function OperativeModal({ isOpen, onClose }: OperativeModalProps)
           </div>
 
           {/* Section 3: Interface Luminescence */}
-          <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
-            <span className="block font-serif font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider mb-1.5 text-[11px]">
+          <div className="pt-3 border-t border-[#1e3a63]">
+            <span className="block font-serif font-bold text-slate-200 uppercase tracking-wider mb-1.5 text-[11px]">
               SYSTEM PREFERENCES
             </span>
-            <div className="flex items-center justify-between p-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xs">
-              <span className="text-[11px] font-mono text-slate-600 dark:text-slate-400">
+            <div className="flex items-center justify-between p-2 bg-[#071324] border border-[#1e3a63] rounded-xs">
+              <span className="text-[11px] font-mono text-slate-400">
                 Interface Luminescence:
               </span>
               <div className="flex gap-1">
                 <button
                   type="button"
                   onClick={() => applyTheme("system")}
-                  className={`p-1 rounded-xs border text-[11px] flex items-center gap-1 ${
+                  className={`p-1 rounded-xs border text-[11px] flex items-center gap-1 cursor-pointer ${
                     theme === "system"
-                      ? "bg-[#071931] text-white border-[#c5a059]"
-                      : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700"
+                      ? "bg-[#071931] text-[#e6ca85] border-[#c5a059]"
+                      : "bg-[#0c2242] text-slate-300 border-[#1e3a63]"
                   }`}
                   title="Follow OS Setting"
                 >
@@ -271,22 +270,22 @@ export default function OperativeModal({ isOpen, onClose }: OperativeModalProps)
                 <button
                   type="button"
                   onClick={() => applyTheme("light")}
-                  className={`p-1 rounded-xs border text-[11px] flex items-center gap-1 ${
+                  className={`p-1 rounded-xs border text-[11px] flex items-center gap-1 cursor-pointer ${
                     theme === "light"
-                      ? "bg-[#071931] text-white border-[#c5a059]"
-                      : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700"
+                      ? "bg-[#071931] text-[#e6ca85] border-[#c5a059]"
+                      : "bg-[#0c2242] text-slate-300 border-[#1e3a63]"
                   }`}
-                  title="Declassified Light Mode"
+                  title="Federal Navy Light Mode"
                 >
                   <Sun className="w-3 h-3" /> Light
                 </button>
                 <button
                   type="button"
                   onClick={() => applyTheme("dark")}
-                  className={`p-1 rounded-xs border text-[11px] flex items-center gap-1 ${
+                  className={`p-1 rounded-xs border text-[11px] flex items-center gap-1 cursor-pointer ${
                     theme === "dark"
-                      ? "bg-[#071931] text-white border-[#c5a059]"
-                      : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700"
+                      ? "bg-[#071931] text-[#e6ca85] border-[#c5a059]"
+                      : "bg-[#0c2242] text-slate-300 border-[#1e3a63]"
                   }`}
                   title="Surveillance Dark Mode"
                 >
@@ -296,14 +295,14 @@ export default function OperativeModal({ isOpen, onClose }: OperativeModalProps)
             </div>
           </div>
 
-          {/* Section 4: Administrative Recognition Badge */}
-          <div className="p-2.5 bg-[#f5f1e8] dark:bg-[#1a2332] border border-[#c5a059]/40 rounded-xs flex items-start gap-2 text-[11px]">
+          {/* Section 4: Administrative Recognition Badge (Safe, No Email Exposed!) */}
+          <div className="p-2.5 bg-[#0c2242] border border-[#c5a059]/40 rounded-xs flex items-start gap-2 text-[11px]">
             <Shield className="w-4 h-4 text-[#c5a059] shrink-0 mt-0.5" />
-            <div className="text-slate-600 dark:text-slate-300">
-              <strong className="text-slate-900 dark:text-white font-serif">
+            <div className="text-slate-300">
+              <strong className="text-white font-serif">
                 DIRECTORATE RECOGNITION:
               </strong>{" "}
-              Logging in with <span className="font-mono font-bold text-[#b91c1c] dark:text-[#f87171]">{ADMIN_EMAIL}</span> automatically assigns Master Oversight clearance across all dockets and incident records.
+              Authenticated Lead Directorate credentials automatically grant Master Oversight clearance across all dockets and incident records.
             </div>
           </div>
         </div>

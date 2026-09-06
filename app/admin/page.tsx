@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ShieldAlert, Trash2, RotateCcw, AlertTriangle, FileText, CheckCircle, ExternalLink } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { ADMIN_EMAIL } from "@/lib/auth";
+ 
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
@@ -13,7 +13,7 @@ export default function AdminPage() {
   const [msg, setMsg] = useState<string | null>(null);
 
   const isMasterAdmin =
-    session?.user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+    (session?.user as any)?.role === "admin" || (session?.user as any)?.isAdmin === true;
 
   useEffect(() => {
     if (session?.user?.email) {
@@ -93,7 +93,7 @@ export default function AdminPage() {
         </h2>
         <p className="text-xs font-mono text-slate-600 dark:text-slate-400">
           This oversight terminal is strictly restricted to Lead Directorate authority:{" "}
-          <strong className="text-rose-600">{ADMIN_EMAIL}</strong>.
+          <strong className="text-rose-600"> </strong>.
         </p>
         <p className="text-[11px] text-slate-500 font-mono">
           Authenticate using your registered Google account via the top-right clearance menu.
@@ -118,7 +118,7 @@ export default function AdminPage() {
           </h2>
           <div className="text-xs font-mono text-emerald-400 mt-1 flex items-center gap-1.5">
             <CheckCircle className="w-3.5 h-3.5" />
-            <span>AUTHENTICATED AS LEAD DIRECTOR: {ADMIN_EMAIL}</span>
+            <span>AUTHENTICATED AS LEAD DIRECTOR:  </span>
           </div>
         </div>
 

@@ -10,7 +10,7 @@ import ReactionConsole from "@/components/ReactionConsole";
 import InvestigatorFieldLog from "@/components/InvestigatorFieldLog";
 import RedactedText from "@/components/RedactedText";
 import { IPost } from "@/models/Post";
-import { ADMIN_EMAIL } from "@/lib/auth";
+ 
 
 export default function PostDetailPage() {
   const params = useParams();
@@ -49,7 +49,7 @@ export default function PostDetailPage() {
   };
 
   const isMasterAdmin =
-    session?.user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+    (session?.user as any)?.role === "admin" || (session?.user as any)?.isAdmin === true;
 
   const handlePrint = () => {
     window.print();

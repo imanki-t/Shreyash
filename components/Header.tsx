@@ -5,14 +5,14 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import AgencyCrest from "./AgencyCrest";
 import OperativeModal from "./OperativeModal";
-import { ADMIN_EMAIL } from "@/lib/auth";
+ 
 
 export default function Header() {
   const { data: session } = useSession();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const isMasterAdmin =
-    session?.user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+    (session?.user as any)?.role === "admin" || (session?.user as any)?.isAdmin === true;
 
   const clearanceLabel = isMasterAdmin
     ? "DIRECTOR"

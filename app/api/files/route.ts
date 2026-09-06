@@ -5,12 +5,16 @@ import bcrypt from "bcryptjs";
 import sanitizeHtml from "sanitize-html";
 import { DEFAULT_DOCKETS } from "@/lib/defaultDockets";
 import { verifyRecaptcha } from "@/lib/recaptcha";
+import { AIRankingEngine, PostInput } from "@/ai-ranking-engine";
+
+const rankingEngine = new AIRankingEngine();
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const docket = searchParams.get("docket");
     const search = searchParams.get("search");
+    const sort = searchParams.get("sort") || "ai";
     const limit = parseInt(searchParams.get("limit") || "50", 10);
     const page = parseInt(searchParams.get("page") || "1", 10);
 
@@ -37,14 +41,80 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    const total = await Post.countDocuments(query);
-    const cases = await Post.find(query)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean();
+    const rawCases = await Post.find(query).lean();
+    let finalCases = [...rawCases];
 
-    return NextResponse.json({ cases, total, page, limit });
+    if (sort === "ai" && rawCases.length > 0) {
+      const inputs: PostInput[] = rawCases.map((c: any) => ({
+        id: c._id.toString(),
+        caseNumber: c.caseNumber || "",
+        title: c.title || "",
+        docketSlug: c.docketSlug || "",
+        classificationTier: c.classificationTier || "RESTRICTED",
+        debriefNarrative: c.debriefNarrative || "",
+        createdAt: c.createdAt,
+        attachmentsCount: c.attachments?.length || 0,
+        hasVideo: Boolean(c.attachments?.some((a: any) => a.mediaType === "video")),
+        hasAudio: Boolean(c.attachments?.some((a: any) => a.mediaType === "audio")),
+        hasImage: Boolean(c.attachments?.some((a: any) => a.mediaType === "image")),
+        stamps: {
+          verifiedAccurate: c.stamps?.verifiedAccurate || 0,
+          corroborated: c.stamps?.corroborated || 0,
+          flaggedAnomaly: c.stamps?.flaggedAnomaly || 0,
+          discrepancyDetected: c.stamps?.discrepancyDetected || 0,
+        },
+        emojis: {
+          thumbsUp: c.emojis?.thumbsUp || 0,
+          thumbsDown: c.emojis?.thumbsDown || 0,
+          laugh: c.emojis?.laugh || 0,
+          skull: c.emojis?.skull || 0,
+          heart: c.emojis?.heart || 0,
+        },
+        ratings: {
+          average: c.ratings?.average || 0,
+          count: c.ratings?.count || 0,
+          totalScore: c.ratings?.totalScore || 0,
+        },
+        authorCodename: c.author?.codename || "Operative",
+        isAnonymous: Boolean(c.author?.isAnonymous),
+        isRedacted: Boolean(c.isRedacted),
+      }));
+
+      const rankingResponse = rankingEngine.rank({
+        posts: inputs,
+        topK: limit * page,
+        applyDiversity: true,
+      });
+
+      const scoreMap = new Map<string, any>();
+      for (const r of rankingResponse.rankedPosts) {
+        scoreMap.set(r.postId, r);
+      }
+
+      finalCases.sort((a: any, b: any) => {
+        const scoreA = scoreMap.get(a._id.toString())?.finalScore || 0;
+        const scoreB = scoreMap.get(b._id.toString())?.finalScore || 0;
+        return scoreB - scoreA;
+      });
+
+      for (const c of finalCases as any[]) {
+        const rankInfo = scoreMap.get(c._id.toString());
+        if (rankInfo) {
+          c.aiRank = rankInfo.rank;
+          c.aiScore = Math.round(rankInfo.finalScore * 100);
+          c.aiContributions = rankInfo.featureContributions;
+        }
+      }
+    } else if (sort === "date_asc") {
+      finalCases.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    } else {
+      finalCases.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+
+    const total = finalCases.length;
+    const paginatedCases = finalCases.slice((page - 1) * limit, page * limit);
+
+    return NextResponse.json({ cases: paginatedCases, total, page, limit });
   } catch (error: any) {
     console.error("[API FILES GET ERROR]", error);
     return NextResponse.json({ error: "Failed to fetch repository cases." }, { status: 500 });
