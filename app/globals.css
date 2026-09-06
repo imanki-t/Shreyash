@@ -1,154 +1,136 @@
 @import "tailwindcss";
 
 :root {
-  --bg-primary: #f1f5f9;
+  --bg-primary: #f6f7f8;
   --bg-card: #ffffff;
-  --bg-header: #071931;
-  --text-main: #0f172a;
-  --text-muted: #475569;
-  --border-federal: #cbd5e1;
-  --navy-deep: #071931;
-  --navy-light: #0d274d;
-  --gold-accent: #c5a059;
-  --gold-bright: #dfb76c;
+  --bg-card-hover: #f9fafb;
+  --border-subtle: #e5e7eb;
+  --border-card: #e5e7eb;
+  --text-main: #111827;
+  --text-muted: #6b7280;
+  --accent-primary: #2563eb;
+  --accent-orange: #ff4500;
+  --accent-blue: #3b82f6;
 }
 
 [data-theme="dark"] {
-  --bg-primary: #040913;
-  --bg-card: #081426;
-  --bg-header: #03070f;
-  --text-main: #f1f5f9;
-  --text-muted: #94a3b8;
-  --border-federal: #152744;
-  --navy-deep: #071931;
-  --navy-light: #0d274d;
-  --gold-accent: #c5a059;
-  --gold-bright: #dfb76c;
+  --bg-primary: #0e1113;
+  --bg-card: #1a1a1b;
+  --bg-card-hover: #272729;
+  --border-subtle: #272729;
+  --border-card: #343536;
+  --text-main: #d7dadc;
+  --text-muted: #818384;
+  --accent-primary: #3b82f6;
+  --accent-orange: #ff4500;
+  --accent-blue: #60a5fa;
 }
 
-body {
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
   background-color: var(--bg-primary);
   color: var(--text-main);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   min-height: 100vh;
 }
 
-/* Federal Rubber Stamps */
-.stamp-classified {
-  display: inline-block;
-  padding: 0.2rem 0.6rem;
-  text-transform: uppercase;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  border-width: 2px;
-  border-style: solid;
-  border-radius: 2px;
+/* Modern Reddit-Style Card */
+.reddit-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 0.75rem;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
-.stamp-red {
-  color: #dc2626;
-  border-color: #dc2626;
-  background-color: rgba(220, 38, 38, 0.08);
+.reddit-card:hover {
+  border-color: #9ca3af;
 }
 
-.stamp-green {
-  color: #16a34a;
-  border-color: #16a34a;
-  background-color: rgba(22, 163, 74, 0.08);
+[data-theme="dark"] .reddit-card:hover {
+  border-color: #52525b;
 }
 
-.stamp-blue {
-  color: #2563eb;
-  border-color: #2563eb;
-  background-color: rgba(37, 99, 235, 0.08);
+/* Modern Primary Button */
+.btn-primary {
+  background-color: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 9999px;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
-.stamp-amber {
-  color: #d97706;
-  border-color: #d97706;
-  background-color: rgba(217, 119, 6, 0.08);
+.btn-primary:hover {
+  background-color: #1d4ed8;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
 }
 
-/* Discord-Style Blackout Redaction Spoiler (Click to Reveal) */
+.btn-secondary {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-card);
+  color: var(--text-main);
+  font-weight: 500;
+  border-radius: 9999px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-secondary:hover {
+  background-color: var(--bg-card-hover);
+  border-color: var(--text-muted);
+}
+
+/* Discord-Style Click-to-Reveal Spoilers */
 .redacted-tape,
 .classified-spoiler {
-  background-color: #071931;
+  background-color: #272729;
   color: transparent !important;
   user-select: none;
-  padding: 0.1rem 0.35rem;
-  border-radius: 3px;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
   cursor: pointer;
-  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
   display: inline;
-  margin: 0 0.15rem;
-  border: 1px solid #0f274a;
-  position: relative;
-  text-shadow: none;
+  margin: 0 0.2rem;
+  border: 1px solid #3f3f46;
 }
 
 .redacted-tape:not(.revealed):hover,
 .classified-spoiler:not(.revealed):hover {
-  background-color: #0a2140;
-  border-color: #1a3c6c;
-}
-
-.redacted-tape::selection,
-.classified-spoiler::selection {
-  background-color: transparent;
-  color: transparent;
+  background-color: #3f3f46;
 }
 
 .redacted-tape.revealed,
 .classified-spoiler.revealed {
-  background-color: rgba(7, 25, 49, 0.12);
+  background-color: rgba(59, 130, 246, 0.12);
   color: inherit !important;
   user-select: auto;
-  border-color: #c5a059;
+  border-color: #3b82f6;
 }
 
-.dark .redacted-tape.revealed,
-.dark .classified-spoiler.revealed {
-  background-color: rgba(13, 39, 77, 0.45);
-  color: #f1f5f9 !important;
-  border-color: #c5a059;
+/* Custom Scrollbar for sleek UI */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
-
-/* Federal Metallic Bevel Button */
-.btn-metallic {
-  background: linear-gradient(180deg, #1e3a63 0%, #0d2442 50%, #071931 100%);
-  border: 1px solid #c5a059;
-  box-shadow: 0px 1px 2px rgba(0,0,0,0.3);
-  color: #f3e6c8;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  transition: all 0.1s ease;
+::-webkit-scrollbar-track {
+  background: transparent;
 }
-
-.btn-metallic:hover {
-  background: linear-gradient(180deg, #284c7e 0%, #123158 50%, #0a203d 100%);
-  color: #ffffff;
-  box-shadow: 0px 0px 6px rgba(197, 160, 89, 0.5);
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.4);
+  border-radius: 9999px;
 }
-
-.btn-metallic:active {
-  background: #071931;
-  transform: translateY(1px);
-}
-
-/* Clean Print Styling */
-@media print {
-  header, nav, .no-print {
-    display: none !important;
-  }
-  body {
-    background: white !important;
-    color: black !important;
-  }
-  .print-document {
-    border: 2px solid black !important;
-    padding: 20px !important;
-    box-shadow: none !important;
-  }
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.7);
 }

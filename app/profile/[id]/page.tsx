@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
-  Shield,
+  User,
   ArrowLeft,
   FileText,
   CheckCircle2,
@@ -14,13 +14,14 @@ import {
   Layers,
   Sparkles,
   Flame,
+  Zap,
   Clock,
-  History,
-  Paperclip,
+  MessageSquare,
+  Share2,
 } from "lucide-react";
-import RedactedText from "@/components/RedactedText";
+import DocketCard from "@/components/DocketCard";
 
-export default function OperativeProfilePage() {
+export default function UserProfilePage() {
   const params = useParams();
   const rawId = (params?.id as string) || "";
   const decodedId = decodeURIComponent(rawId);
@@ -53,7 +54,7 @@ export default function OperativeProfilePage() {
   useEffect(() => {
     if (!decodedId) return;
 
-    const fetchOperativeCases = async () => {
+    const fetchUserPosts = async () => {
       setLoadingCases(true);
       try {
         const res = await fetch(
@@ -62,13 +63,13 @@ export default function OperativeProfilePage() {
         const data = await res.json();
         if (data.cases) setCases(data.cases);
       } catch (err) {
-        console.error("Failed to load operative cases", err);
+        console.error("Failed to load user posts", err);
       } finally {
         setLoadingCases(false);
       }
     };
 
-    fetchOperativeCases();
+    fetchUserPosts();
   }, [decodedId, sort]);
 
   const joinedFormatted = profile?.firstActive
@@ -77,266 +78,154 @@ export default function OperativeProfilePage() {
         month: "short",
         day: "numeric",
       })
-    : "CLASSIFIED";
+    : "Recently";
 
   return (
-    <div className="max-w-6xl mx-auto space-y-5 font-sans">
-      {/* Top Breadcrumb Ribbon */}
-      <div className="bg-[#ede9dc] dark:bg-[#0f1722] border-2 border-[#c8c4b7] dark:border-[#273549] p-2.5 rounded-xs flex items-center justify-between text-xs font-mono">
-        <div className="flex items-center gap-2">
-          <Link
-            href="/home"
-            className="hover:underline flex items-center gap-1 text-slate-700 dark:text-slate-300"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" /> Central Registry
-          </Link>
-          <span className="text-slate-400">/</span>
-          <span className="text-slate-500">Operative Personnel Dossier</span>
-          <span className="text-slate-400">/</span>
-          <span className="font-bold text-[#071931] dark:text-[#dfb76c]">{decodedId}</span>
-        </div>
-        <span className="stamp-classified stamp-amber text-[9px]">
-          PERSONNEL ARCHIVE // FOIA SECTION 07
-        </span>
+    <div className="max-w-5xl mx-auto space-y-4 font-sans">
+      {/* Top Breadcrumb */}
+      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+        <Link href="/home" className="hover:underline flex items-center gap-1">
+          <ArrowLeft className="w-3.5 h-3.5" /> All Feeds
+        </Link>
+        <span>/</span>
+        <span className="font-semibold text-gray-900 dark:text-gray-100">u/{decodedId}</span>
       </div>
 
-      {/* Operative Federal Dossier Card */}
-      <div className="bg-[#fbfaf6] dark:bg-[#0f1722] border-2 border-[#c8c4b7] dark:border-[#273549] rounded-xs shadow-md p-6 relative overflow-hidden">
-        {/* Clearance Stamp in Top Right Corner */}
-        <div className="absolute top-4 right-6 rotate-2 pointer-events-none">
-          <span
-            className={`stamp-classified text-xs ${
-              profile?.isMasterAdmin ? "stamp-amber" : "stamp-green"
-            }`}
-          >
-            {profile?.isMasterAdmin ? "DIRECTORATE OVERSEER" : "ACTIVE OPERATIVE"}
-          </span>
-        </div>
+      {/* Reddit-Style User Profile Header */}
+      <div className="reddit-card overflow-hidden">
+        {/* Profile Banner */}
+        <div className="h-24 sm:h-28 bg-gradient-to-r from-blue-700 via-indigo-600 to-sky-500" />
 
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-5">
-          {/* Avatar / Shield Badge */}
-          <div className="w-20 h-20 rounded-full bg-[#071931] border-2 border-[#c5a059] flex items-center justify-center shadow-md shrink-0">
-            <Shield className="w-10 h-10 text-[#d8c396]" />
-          </div>
+        <div className="p-5 relative pt-0">
+          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 -mt-10 sm:-mt-12">
+            <div className="flex items-end gap-3.5">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white dark:bg-[#1a1a1b] border-4 border-white dark:border-[#1a1a1b] shadow-md flex items-center justify-center shrink-0">
+                <User className="w-10 h-10 text-blue-600 dark:text-blue-400" />
+              </div>
 
-          {/* Identity Details */}
-          <div className="space-y-1.5 flex-1">
-            <div className="text-[10px] font-mono tracking-widest text-slate-500 uppercase">
-              FIELD INVESTIGATIVE CODENAME
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-serif font-black tracking-wider text-slate-900 dark:text-white uppercase">
-              {profile?.codename || decodedId}
-            </h1>
-            <div className="flex flex-wrap items-center gap-2 pt-0.5">
-              <span className="stamp-classified stamp-blue text-[10px]">
-                {profile?.clearanceTier || "FIELD OPERATIVE // LEVEL 2"}
-              </span>
-              <span className="inline-flex items-center gap-1 text-[11px] font-mono text-slate-500">
-                <Calendar className="w-3 h-3 text-[#c5a059]" />
-                COMMISSIONED: {joinedFormatted}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Tactical Statistics Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-[#c8c4b7] dark:border-[#273549]">
-          <div className="bg-[#ede9dc] dark:bg-[#152130] p-3 rounded-xs border border-[#c8c4b7] dark:border-slate-800">
-            <div className="text-[10px] font-mono text-slate-500 uppercase flex items-center gap-1">
-              <FileText className="w-3 h-3 text-[#c5a059]" />
-              Dossiers Filed
-            </div>
-            <div className="text-xl font-serif font-bold text-slate-900 dark:text-white mt-1">
-              {profile?.totalPosts ?? cases.length}
+              <div className="pb-1">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                  u/{profile?.codename || decodedId}
+                </h1>
+                <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                  <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-full font-medium text-[11px]">
+                    {profile?.isMasterAdmin ? "Administrator" : "Community Member"}
+                  </span>
+                  <span>•</span>
+                  <span>Joined {joinedFormatted}</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="bg-[#ede9dc] dark:bg-[#152130] p-3 rounded-xs border border-[#c8c4b7] dark:border-slate-800">
-            <div className="text-[10px] font-mono text-slate-500 uppercase flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-              Verifications
+          {/* Profile Quick Stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-gray-100 dark:border-[#272729]">
+            <div className="p-3 bg-gray-50 dark:bg-[#272729] rounded-xl">
+              <div className="text-[11px] font-medium text-gray-500 flex items-center gap-1">
+                <FileText className="w-3.5 h-3.5 text-blue-500" />
+                Posts Created
+              </div>
+              <div className="text-lg font-bold text-gray-900 dark:text-white mt-0.5">
+                {profile?.totalPosts ?? cases.length}
+              </div>
             </div>
-            <div className="text-xl font-serif font-bold text-emerald-600 dark:text-emerald-400 mt-1">
-              {profile?.totalVerifiedStamps ?? 0}
-            </div>
-          </div>
 
-          <div className="bg-[#ede9dc] dark:bg-[#152130] p-3 rounded-xs border border-[#c8c4b7] dark:border-slate-800">
-            <div className="text-[10px] font-mono text-slate-500 uppercase flex items-center gap-1">
-              <ThumbsUp className="w-3 h-3 text-amber-500" />
-              Reactions
+            <div className="p-3 bg-gray-50 dark:bg-[#272729] rounded-xl">
+              <div className="text-[11px] font-medium text-gray-500 flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                Verifications
+              </div>
+              <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                {profile?.totalVerifiedStamps ?? 0}
+              </div>
             </div>
-            <div className="text-xl font-serif font-bold text-amber-600 dark:text-amber-400 mt-1">
-              {profile?.totalReactions ?? 0}
-            </div>
-          </div>
 
-          <div className="bg-[#ede9dc] dark:bg-[#152130] p-3 rounded-xs border border-[#c8c4b7] dark:border-slate-800">
-            <div className="text-[10px] font-mono text-slate-500 uppercase flex items-center gap-1">
-              <Eye className="w-3 h-3 text-cyan-500" />
-              Exhibits Viewed
+            <div className="p-3 bg-gray-50 dark:bg-[#272729] rounded-xl">
+              <div className="text-[11px] font-medium text-gray-500 flex items-center gap-1">
+                <ThumbsUp className="w-3.5 h-3.5 text-amber-500" />
+                Reactions
+              </div>
+              <div className="text-lg font-bold text-amber-600 dark:text-amber-400 mt-0.5">
+                {profile?.totalReactions ?? 0}
+              </div>
             </div>
-            <div className="text-xl font-serif font-bold text-cyan-600 dark:text-cyan-400 mt-1">
-              {profile?.totalViews ?? 0}
+
+            <div className="p-3 bg-gray-50 dark:bg-[#272729] rounded-xl">
+              <div className="text-[11px] font-medium text-gray-500 flex items-center gap-1">
+                <Eye className="w-3.5 h-3.5 text-purple-500" />
+                Post Views
+              </div>
+              <div className="text-lg font-bold text-purple-600 dark:text-purple-400 mt-0.5">
+                {profile?.totalViews ?? 0}
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Contributing Dockets Badges */}
-        {profile?.dockets && profile.dockets.length > 0 && (
-          <div className="mt-4 flex flex-wrap items-center gap-1.5 text-xs font-mono">
-            <span className="text-slate-500 text-[10px] uppercase mr-1 flex items-center gap-1">
-              <Layers className="w-3 h-3 text-[#c5a059]" />
-              DOCKET ASSIGNMENTS:
-            </span>
-            {profile.dockets.map((dock: string) => (
-              <span
-                key={dock}
-                className="px-2 py-0.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xs text-[10px]"
-              >
-                {dock}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
 
-      {/* Posts Section Header & Sorting Bar */}
-      <div className="bg-[#ede9dc] dark:bg-[#0f1722] border-2 border-[#c8c4b7] dark:border-[#273549] p-3 rounded-xs shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="font-serif font-bold text-sm uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
-            <FileText className="w-4 h-4 text-[#c5a059]" />
-            INCIDENT DOSSIERS LODGED BY THIS OPERATIVE ({cases.length})
-          </h2>
-          <p className="text-[11px] font-mono text-slate-500 mt-0.5">
-            Classified incident filings authored or corroborated under this callsign
-          </p>
-        </div>
+      {/* Posts Section Bar with Sort Controls */}
+      <div className="reddit-card p-3 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
+          <FileText className="w-4 h-4 text-blue-500" />
+          Posts by u/{decodedId} ({cases.length})
+        </h2>
 
-        {/* Sorting Tabs: Trending / New / Old */}
-        <div className="flex items-center gap-1 bg-[#ded9cb] dark:bg-[#1a2636] p-1 rounded-xs border border-[#c8c4b7] dark:border-slate-700">
+        {/* Sort Tabs */}
+        <div className="flex items-center gap-1">
           <button
             onClick={() => setSort("trending")}
-            className={`px-3 py-1 text-xs font-mono rounded-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
               sort === "trending"
-                ? "bg-[#071931] text-amber-300 font-bold shadow-xs"
-                : "text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white"
+                ? "bg-gray-100 dark:bg-[#272729] text-orange-500"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             }`}
           >
-            <Flame className="w-3 h-3 text-amber-400" />
-            Trending
+            <Flame className="w-3.5 h-3.5 text-orange-500" />
+            <span>Hot</span>
           </button>
           <button
             onClick={() => setSort("new")}
-            className={`px-3 py-1 text-xs font-mono rounded-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
               sort === "new"
-                ? "bg-[#071931] text-cyan-300 font-bold shadow-xs"
-                : "text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white"
+                ? "bg-gray-100 dark:bg-[#272729] text-blue-500"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             }`}
           >
-            <Clock className="w-3 h-3 text-cyan-400" />
-            Newest
+            <Zap className="w-3.5 h-3.5 text-blue-500" />
+            <span>New</span>
           </button>
           <button
             onClick={() => setSort("old")}
-            className={`px-3 py-1 text-xs font-mono rounded-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
               sort === "old"
-                ? "bg-[#071931] text-slate-200 font-bold shadow-xs"
-                : "text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white"
+                ? "bg-gray-100 dark:bg-[#272729] text-gray-900 dark:text-white"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             }`}
           >
-            <History className="w-3 h-3 text-slate-400" />
-            Oldest
+            <Clock className="w-3.5 h-3.5" />
+            <span>Top</span>
           </button>
         </div>
       </div>
 
-      {/* Cases List */}
+      {/* User Posts Feed */}
       {loadingCases ? (
-        <div className="bg-[#fbfaf6] dark:bg-[#0f1722] border-2 border-[#c8c4b7] dark:border-[#273549] p-12 text-center text-xs font-mono text-slate-500">
-          <div className="animate-spin inline-block w-5 h-5 border-2 border-[#071931] border-t-transparent rounded-full mb-2" />
-          <div>SCANNING OPERATIVE FILING ARCHIVES...</div>
+        <div className="reddit-card p-10 text-center text-xs text-gray-500">
+          <div className="animate-spin inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mb-2" />
+          <div>Loading user posts...</div>
         </div>
       ) : cases.length === 0 ? (
-        <div className="bg-[#fbfaf6] dark:bg-[#0f1722] border-2 border-[#c8c4b7] dark:border-[#273549] p-10 text-center rounded-xs space-y-3 font-mono text-xs">
-          <FileText className="w-8 h-8 mx-auto text-slate-400" />
-          <div className="font-serif font-bold text-sm text-slate-800 dark:text-slate-200 uppercase">
-            NO DECLASSIFIED EXHIBITS FILED BY THIS CALLSIGN
-          </div>
-          <p className="text-slate-500 max-w-md mx-auto">
-            This operative has not yet lodged any public incident dossiers into the central repository.
-          </p>
-          <div className="pt-2">
-            <Link
-              href="/upload"
-              className="btn-metallic px-4 py-1.5 text-xs font-serif font-bold rounded-xs inline-block cursor-pointer"
-            >
-              + Lodge Deposition Under Your Name
-            </Link>
+        <div className="reddit-card p-10 text-center space-y-2 text-xs text-gray-500">
+          <FileText className="w-8 h-8 mx-auto text-gray-400" />
+          <div className="font-bold text-sm text-gray-800 dark:text-gray-200">
+            No posts published by this user yet
           </div>
         </div>
       ) : (
         <div className="space-y-3">
-          {cases.map((c) => {
-            const formattedDate = new Date(c.createdAt).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "short",
-              day: "2-digit",
-            });
-
-            return (
-              <div
-                key={c._id}
-                className="bg-[#fbfaf6] dark:bg-[#111822] border-2 border-[#c8c4b7] dark:border-[#273549] p-4 rounded-xs shadow-xs hover:border-[#7c8798] transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
-              >
-                <div className="space-y-1 flex-1">
-                  <div className="flex flex-wrap items-center gap-2 text-[10px] font-mono">
-                    <span className="font-bold text-[#071931] dark:text-[#dfb76c]">
-                      {c.caseNumber}
-                    </span>
-                    <span className="text-slate-400">•</span>
-                    <span className="text-slate-500">{formattedDate}</span>
-                    <span className="text-slate-400">•</span>
-                    <span className="px-1.5 py-0.2 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xs">
-                      {c.docketName}
-                    </span>
-                    {c.aiScore !== undefined && (
-                      <span className="inline-flex items-center gap-0.5 px-1 py-0.2 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-300 rounded-xs">
-                        <Sparkles className="w-2.5 h-2.5 text-amber-500" />
-                        {c.aiScore}% Priority
-                      </span>
-                    )}
-                  </div>
-
-                  <h3 className="font-serif font-bold text-sm text-slate-900 dark:text-white hover:text-[#b91c1c] dark:hover:text-[#e6ca85]">
-                    <Link href={`/post/${c.caseNumber || c._id}`}>
-                      {c.isRedacted ? "[REDACTED UNDER DIRECTIVE 4-B]" : c.title}
-                    </Link>
-                  </h3>
-
-                  <div className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 italic font-serif">
-                    <RedactedText content={c.debriefNarrative} />
-                  </div>
-
-                  {c.attachments && c.attachments.length > 0 && (
-                    <div className="flex items-center gap-1 text-[10px] font-mono text-slate-500 pt-1">
-                      <Paperclip className="w-2.5 h-2.5" />
-                      <span>{c.attachments.length} Exhibit(s) attached</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                  <Link
-                    href={`/post/${c.caseNumber || c._id}`}
-                    className="btn-metallic px-3 py-1.5 text-xs font-serif font-bold rounded-xs flex items-center gap-1 cursor-pointer"
-                  >
-                    <Eye className="w-3.5 h-3.5" /> Inspect Dossier
-                  </Link>
-                </div>
-              </div>
-            );
-          })}
+          {cases.map((post) => (
+            <DocketCard key={post.caseNumber || post._id} post={post} />
+          ))}
         </div>
       )}
     </div>

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { Send, Shield, User, Clock } from "lucide-react";
+import { Send, User, MessageSquare, Clock, EyeOff } from "lucide-react";
 import RedactedText from "./RedactedText";
 
 interface CommentItem {
@@ -31,7 +31,7 @@ export default function InvestigatorFieldLog({ caseId }: InvestigatorFieldLogPro
     const savedCodename = localStorage.getItem("covert_codename");
     if (savedCodename) setAuthorCodename(savedCodename);
     else if (session?.user?.name) setAuthorCodename(session.user.name);
-    else setAuthorCodename("Investigator");
+    else setAuthorCodename("User");
 
     fetchComments();
   }, [caseId, session]);
@@ -57,8 +57,8 @@ export default function InvestigatorFieldLog({ caseId }: InvestigatorFieldLogPro
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           caseId,
-          authorName: session?.user?.name || "Operative",
-          authorCodename: isAnonymous ? "Masked Operative" : (authorCodename || "Special Agent"),
+          authorName: session?.user?.name || authorCodename || "User",
+          authorCodename: isAnonymous ? "Anonymous" : (authorCodename || "User"),
           authorEmail: session?.user?.email,
           isAnonymous,
           content: newContent.trim(),
@@ -78,29 +78,71 @@ export default function InvestigatorFieldLog({ caseId }: InvestigatorFieldLogPro
   };
 
   return (
-    <div className="bg-[#f9f8f5] dark:bg-[#111822] border-2 border-[#b8b3a5] dark:border-[#273549] shadow-xs rounded-xs overflow-hidden font-sans">
+    <div className="reddit-card overflow-hidden font-sans space-y-0">
       {/* Header */}
-      <div className="bg-[#071931] text-white px-4 py-2.5 border-b-2 border-[#c5a059] flex items-center justify-between">
+      <div className="px-5 py-3.5 border-b border-gray-200 dark:border-[#343536] flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Shield className="w-4 h-4 text-[#c5a059]" />
-          <h3 className="font-serif font-bold text-xs uppercase tracking-wider text-[#d8c396]">
-            INVESTIGATOR FIELD LOG & WITNESS CORROBORATION
+          <MessageSquare className="w-4 h-4 text-blue-500" />
+          <h3 className="font-bold text-sm text-gray-900 dark:text-gray-100">
+            Comments & Discussion ({comments.length})
           </h3>
         </div>
-        <span className="font-mono text-[10px] text-slate-400">
-          {comments.length} ENTRIES LOGGED
-        </span>
       </div>
 
-      {/* Log Feed */}
-      <div className="p-4 space-y-3 max-h-[380px] overflow-y-auto divide-y divide-slate-200 dark:divide-slate-800">
+      {/* Intake Comment Form */}
+      <div className="p-4 sm:p-5 bg-gray-50/50 dark:bg-[#161a1d] border-b border-gray-200 dark:border-[#343536]">
+        <form onSubmit={handlePostComment} className="space-y-3">
+          <textarea
+            rows={3}
+            value={newContent}
+            onChange={(e) => setNewContent(e.target.value)}
+            placeholder="What are your thoughts?"
+            className="w-full p-3 bg-white dark:bg-[#272729] border border-gray-300 dark:border-gray-700 rounded-xl text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-hidden focus:border-blue-500 transition-colors"
+          />
+
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isAnonymous}
+                  onChange={(e) => setIsAnonymous(e.target.checked)}
+                  className="rounded-sm text-blue-600 focus:ring-blue-500"
+                />
+                <span>Comment Anonymously</span>
+              </label>
+
+              {!isAnonymous && (
+                <input
+                  type="text"
+                  value={authorCodename}
+                  onChange={(e) => setAuthorCodename(e.target.value)}
+                  placeholder="Your Name"
+                  className="px-2.5 py-1 text-xs bg-white dark:bg-[#272729] border border-gray-300 dark:border-gray-700 rounded-md text-gray-900 dark:text-gray-100"
+                />
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading || !newContent.trim()}
+              className="btn-primary text-xs py-1.5 px-4 disabled:opacity-50 cursor-pointer"
+            >
+              {loading ? "Posting..." : "Comment"}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Comment List */}
+      <div className="p-4 sm:p-5 space-y-4 divide-y divide-gray-100 dark:divide-[#272729]">
         {comments.length === 0 ? (
-          <div className="py-6 text-center text-xs font-mono text-slate-500">
-            [NO FIELD ENTRIES RECORDED FOR THIS INCIDENT YET]
+          <div className="py-8 text-center text-xs text-gray-400">
+            No comments yet. Be the first to share your reaction!
           </div>
         ) : (
           comments.map((entry) => {
-            const timeFormatted = new Date(entry.createdAt).toLocaleString("en-US", {
+            const timeFormatted = new Date(entry.createdAt).toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
               hour: "2-digit",
@@ -108,86 +150,33 @@ export default function InvestigatorFieldLog({ caseId }: InvestigatorFieldLogPro
             });
 
             return (
-              <div key={entry._id} className="pt-3 first:pt-0 space-y-1">
-                <div className="flex items-center justify-between text-[11px] font-mono">
-                  <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-slate-100">
-                    <User className="w-3 h-3 text-[#c5a059]" />
+              <div key={entry._id} className="pt-3.5 first:pt-0 space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 font-bold text-[10px]">
+                      {entry.authorCodename.substring(0, 1).toUpperCase()}
+                    </div>
                     {entry.isAnonymous ? (
-                      <span>{entry.authorCodename}</span>
+                      <span className="font-semibold text-gray-500">Anonymous</span>
                     ) : (
                       <Link
-                        href={`/profile/${encodeURIComponent(entry.authorCodename || "Operative")}`}
-                        className="hover:underline hover:text-[#071931] dark:hover:text-[#dfb76c] transition-colors"
-                        title="Inspect Operative Dossier"
+                        href={`/profile/${encodeURIComponent(entry.authorCodename || "User")}`}
+                        className="font-semibold text-gray-900 dark:text-gray-100 hover:underline hover:text-blue-500 transition-colors"
                       >
-                        {entry.authorCodename}
+                        u/{entry.authorCodename}
                       </Link>
                     )}
-                    {entry.isAnonymous && (
-                      <span className="text-[9px] bg-slate-200 dark:bg-slate-800 px-1 text-slate-600 dark:text-slate-400 rounded-xs font-normal">
-                        MASKED
-                      </span>
-                    )}
                   </div>
-                  <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                    <Clock className="w-2.5 h-2.5" />
-                    <span>{timeFormatted}</span>
-                  </div>
+                  <span className="text-[11px] text-gray-400">{timeFormatted}</span>
                 </div>
 
-                <div className="font-serif text-xs text-slate-800 dark:text-slate-200 leading-relaxed pl-4 border-l-2 border-slate-300 dark:border-slate-700">
+                <div className="text-xs sm:text-sm text-gray-700 dark:text-gray-200 leading-relaxed pl-8">
                   <RedactedText text={entry.content} />
                 </div>
               </div>
             );
           })
         )}
-      </div>
-
-      {/* Intake Form */}
-      <div className="p-3 bg-slate-100 dark:bg-slate-900 border-t border-slate-300 dark:border-slate-800">
-        <form onSubmit={handlePostComment} className="space-y-2">
-          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono">
-            <div className="flex items-center gap-2">
-              <span className="text-slate-600 dark:text-slate-400">Agent Designation:</span>
-              <input
-                type="text"
-                value={authorCodename}
-                onChange={(e) => setAuthorCodename(e.target.value)}
-                disabled={isAnonymous}
-                placeholder="Agent Codename"
-                className="px-2 py-0.5 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xs font-mono text-xs w-36"
-              />
-            </div>
-            <label className="flex items-center gap-1.5 cursor-pointer text-slate-600 dark:text-slate-400">
-              <input
-                type="checkbox"
-                checked={isAnonymous}
-                onChange={(e) => setIsAnonymous(e.target.checked)}
-                className="rounded-xs"
-              />
-              <span>Mask Identity (File Anonymously)</span>
-            </label>
-          </div>
-
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newContent}
-              onChange={(e) => setNewContent(e.target.value)}
-              placeholder="Record field notes, corroborate statements, or add timestamps (use ||text|| to redact)..."
-              className="flex-1 px-3 py-1.5 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xs text-xs font-serif focus:outline-hidden focus:border-[#071931]"
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-metallic px-4 py-1.5 font-serif font-bold text-xs flex items-center gap-1 cursor-pointer"
-            >
-              <Send className="w-3 h-3 text-[#071931]" />
-              <span>Log Note</span>
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   );

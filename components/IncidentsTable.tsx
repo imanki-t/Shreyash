@@ -2,7 +2,14 @@
 
 import React from "react";
 import Link from "next/link";
-import { Shield, Eye, Paperclip, FileText, Cpu, Sparkles } from "lucide-react";
+import {
+  MessageSquare,
+  Sparkles,
+  Paperclip,
+  Flame,
+  ArrowUpRight,
+  FileText,
+} from "lucide-react";
 
 export interface CaseItem {
   _id: string;
@@ -27,7 +34,14 @@ export interface CaseItem {
     flaggedAnomaly: number;
     discrepancyDetected: number;
   };
-  ratings: {
+  emojis?: {
+    thumbsUp?: number;
+    thumbsDown?: number;
+    laugh?: number;
+    skull?: number;
+    heart?: number;
+  };
+  ratings?: {
     average: number;
     count: number;
   };
@@ -45,157 +59,114 @@ interface IncidentsTableProps {
 export default function IncidentsTable({ cases, loading = false }: IncidentsTableProps) {
   if (loading) {
     return (
-      <div className="bg-white dark:bg-[#111822] border-2 border-[#b8b3a5] dark:border-[#273549] p-8 text-center text-xs font-mono text-slate-500">
-        <div className="animate-spin inline-block w-5 h-5 border-2 border-[#071931] border-t-transparent rounded-full mb-2" />
-        <div>DECRYPTING REPOSITORY INDEX RECORDS...</div>
+      <div className="bg-white dark:bg-[#1a1a1b] border border-gray-200 dark:border-[#343536] rounded-xl p-10 text-center text-xs text-gray-500">
+        <div className="animate-spin inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mb-2" />
+        <div>Loading feed posts...</div>
       </div>
     );
   }
 
   if (cases.length === 0) {
     return (
-      <div className="bg-white dark:bg-[#111822] border-2 border-[#b8b3a5] dark:border-[#273549] p-8 text-center text-xs text-slate-600 dark:text-slate-400 font-serif">
-        <FileText className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-        <div className="font-bold text-sm text-slate-900 dark:text-white uppercase tracking-wider mb-1">
-          No Incident Records Lodged Under This Query
-        </div>
-        <p className="max-w-md mx-auto text-xs text-slate-500 font-sans mb-4">
-          All case folders are currently sealed or no reports have been filed yet into the central repository.
+      <div className="bg-white dark:bg-[#1a1a1b] border border-gray-200 dark:border-[#343536] rounded-xl p-10 text-center">
+        <FileText className="w-10 h-10 text-gray-400 mx-auto mb-2" />
+        <h3 className="font-bold text-base text-gray-900 dark:text-white mb-1">
+          No Posts Found
+        </h3>
+        <p className="text-xs text-gray-500 max-w-sm mx-auto mb-4">
+          There are no posts matching your current filter. Be the first to share a post!
         </p>
-        <Link
-          href="/upload"
-          className="inline-block btn-metallic px-4 py-2 font-bold font-serif text-xs uppercase tracking-wider"
-        >
-          Lodge First Incident Deposition →
+        <Link href="/upload" className="btn-primary text-xs">
+          Create the First Post →
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-[#111822] border-2 border-[#b8b3a5] dark:border-[#273549] shadow-xs rounded-xs overflow-hidden font-sans">
-      {/* Table Header Ribbon */}
-      <div className="bg-[#071931] text-white px-3 py-2 border-b-2 border-[#c5a059] flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h3 className="font-serif font-bold text-xs uppercase tracking-wider text-[#d8c396]">
-            RECENTLY FILED INCIDENT EXHIBITS
-          </h3>
-          <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-xs bg-[#0d274d] border border-[#273549] text-[9px] font-mono text-cyan-300">
-            <Cpu className="w-2.5 h-2.5 text-cyan-400" />
-            AI RANKING ACTIVE
-          </span>
-        </div>
-        <span className="font-mono text-[10px] text-slate-400">
-          {cases.length} RECORDS CATALOGED
-        </span>
-      </div>
+    <div className="space-y-3">
+      {cases.map((c) => {
+        const formattedDate = new Date(c.createdAt).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
 
-      {/* Table responsive container */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs border-collapse">
-          <thead>
-            <tr className="bg-slate-100 dark:bg-slate-900 border-b border-slate-300 dark:border-slate-800 text-[11px] font-mono text-slate-600 dark:text-slate-400 uppercase">
-              <th className="py-2.5 px-3 font-semibold">Case File ID</th>
-              <th className="py-2.5 px-3 font-semibold">Filing Date</th>
-              <th className="py-2.5 px-3 font-semibold">Incident Title & Category</th>
-              <th className="py-2.5 px-3 font-semibold">AI Priority</th>
-              <th className="py-2.5 px-3 font-semibold">Clearance</th>
-              <th className="py-2.5 px-3 font-semibold">Investigator</th>
-              <th className="py-2.5 px-3 font-semibold text-right">Status / Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-mono text-slate-800 dark:text-slate-200 text-xs">
-            {cases.map((c) => {
-              const formattedDate = new Date(c.createdAt).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "short",
-                day: "2-digit",
-              });
+        const totalVotes =
+          (c.emojis?.thumbsUp || 0) - (c.emojis?.thumbsDown || 0) + (c.stamps?.verifiedAccurate || 0);
 
-              return (
-                <tr
-                  key={c._id}
-                  className="hover:bg-amber-50/40 dark:hover:bg-slate-800/50 transition-colors"
+        return (
+          <article
+            key={c._id}
+            className="reddit-card p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 overflow-hidden"
+          >
+            <div className="flex-1 min-w-0 space-y-1.5">
+              {/* Community & Author info */}
+              <div className="flex flex-wrap items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                <Link
+                  href={`/archive/${c.docketSlug}`}
+                  className="font-bold text-gray-900 dark:text-gray-200 hover:underline hover:text-blue-600 dark:hover:text-blue-400"
                 >
-                  <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-slate-100">
-                    <Link
-                      href={`/post/${c.caseNumber || c._id}`}
-                      className="text-[#071931] dark:text-[#d8c396] hover:underline"
-                    >
-                      {c.caseNumber}
-                    </Link>
-                  </td>
-                  <td className="py-2.5 px-3 text-slate-500 text-[11px]">
-                    {formattedDate}
-                  </td>
-                  <td className="py-2.5 px-3">
-                    <div className="font-serif font-bold text-slate-900 dark:text-white line-clamp-1">
-                      <Link
-                        href={`/post/${c.caseNumber || c._id}`}
-                        className="hover:text-[#b91c1c] dark:hover:text-[#e6ca85]"
-                      >
-                        {c.isRedacted ? "[REDACTED BY ORDER OF THE BUREAU]" : c.title}
-                      </Link>
-                    </div>
-                    <div className="text-[10px] text-slate-500 font-sans flex items-center gap-1.5 mt-0.5">
-                      <span className="font-mono text-slate-600 dark:text-slate-400">
-                        {c.docketName}
-                      </span>
-                      {c.attachments && c.attachments.length > 0 && (
-                        <span className="flex items-center gap-0.5 text-slate-400 text-[10px]">
-                          <Paperclip className="w-2.5 h-2.5" />
-                          {c.attachments.length} Exhibit(s)
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="py-2.5 px-3">
-                    {c.aiScore !== undefined ? (
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-[10px] font-mono text-slate-700 dark:text-slate-300 rounded-xs">
-                        <Sparkles className="w-2.5 h-2.5 text-amber-500" />
-                        <span>{c.aiScore}%</span>
-                      </span>
-                    ) : (
-                      <span className="text-slate-400 text-[10px]">—</span>
-                    )}
-                  </td>
-                  <td className="py-2.5 px-3">
-                    <span
-                      className={`stamp-classified text-[9px] ${
-                        c.isRedacted
-                          ? "stamp-red"
-                          : c.classificationTier === "CONFIDENTIAL"
-                          ? "stamp-blue"
-                          : "stamp-amber"
-                      }`}
-                    >
-                      {c.isRedacted ? "CENSORED" : c.classificationTier || "RESTRICTED"}
-                    </span>
-                  </td>
-                  <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 text-[11px]">
-                    <Link
-                      href={`/profile/${encodeURIComponent(c.author.codename || "Operative")}`}
-                      className="hover:underline hover:text-[#071931] dark:hover:text-[#dfb76c] font-bold inline-flex items-center gap-1 transition-colors"
-                      title="Inspect Operative Dossier"
-                    >
-                      {c.author.codename || "Operative"}
-                    </Link>
-                  </td>
-                  <td className="py-2.5 px-3 text-right">
-                    <Link
-                      href={`/post/${c.caseNumber || c._id}`}
-                      className="btn-metallic px-2.5 py-1 text-[10px] font-serif font-bold inline-flex items-center gap-1 cursor-pointer"
-                    >
-                      <Eye className="w-3 h-3" />
-                      <span>Inspect Dossier</span>
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                  c/{c.docketSlug}
+                </Link>
+                <span>•</span>
+                <span>Posted by</span>
+                <Link
+                  href={`/profile/${encodeURIComponent(c.author?.codename || "User")}`}
+                  className="font-medium hover:underline hover:text-blue-600 dark:hover:text-blue-400 text-gray-700 dark:text-gray-300"
+                >
+                  u/{c.author?.codename || "Anonymous"}
+                </Link>
+                <span>•</span>
+                <span className="text-[11px]">{formattedDate}</span>
+
+                {c.aiScore !== undefined && (
+                  <span className="ml-1 inline-flex items-center gap-0.5 px-1.5 py-0.2 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-full text-[10px] font-medium border border-blue-200 dark:border-blue-900">
+                    <Sparkles className="w-2.5 h-2.5 text-blue-500" />
+                    {c.aiScore}% Match
+                  </span>
+                )}
+              </div>
+
+              {/* Title */}
+              <h3 className="font-bold text-base text-gray-900 dark:text-gray-100 leading-snug hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                <Link href={`/post/${c.caseNumber || c._id}`}>
+                  {c.isRedacted ? "[Redacted Content]" : c.title}
+                </Link>
+              </h3>
+
+              {/* Narrative Snippet */}
+              <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                {c.debriefNarrative}
+              </p>
+
+              {/* Meta tags */}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <span className="px-2 py-0.5 bg-gray-100 dark:bg-[#272729] text-gray-600 dark:text-gray-300 rounded-md text-[11px] font-medium">
+                  {c.docketName}
+                </span>
+
+                {c.attachments && c.attachments.length > 0 && (
+                  <span className="inline-flex items-center gap-1 text-[11px] text-gray-400">
+                    <Paperclip className="w-3 h-3" />
+                    {c.attachments.length} attachment(s)
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Right Action Button */}
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+              <Link
+                href={`/post/${c.caseNumber || c._id}`}
+                className="btn-secondary text-xs py-1.5 px-3"
+              >
+                <span>View Post</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </article>
+        );
+      })}
     </div>
   );
 }

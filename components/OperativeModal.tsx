@@ -3,7 +3,17 @@
 import React, { useState, useEffect } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import Link from "next/link";
-import { Shield, Key, Moon, Sun, Monitor, LogOut, CheckCircle2 } from "lucide-react";
+import {
+  User,
+  Shield,
+  Moon,
+  Sun,
+  Monitor,
+  LogOut,
+  ExternalLink,
+  Settings,
+  X,
+} from "lucide-react";
 
 interface OperativeModalProps {
   isOpen: boolean;
@@ -12,15 +22,9 @@ interface OperativeModalProps {
 
 export default function OperativeModal({ isOpen, onClose }: OperativeModalProps) {
   const { data: session } = useSession();
-  const [codename, setCodename] = useState("");
-  const [passkey, setPasskey] = useState("");
   const [theme, setTheme] = useState<"system" | "light" | "dark">("system");
-  const [covertSuccess, setCovertSuccess] = useState(false);
 
   useEffect(() => {
-    const savedCodename = localStorage.getItem("covert_codename");
-    if (savedCodename) setCodename(savedCodename);
-
     const savedTheme = (localStorage.getItem("site_theme") as any) || "system";
     setTheme(savedTheme);
     applyTheme(savedTheme);
@@ -36,7 +40,6 @@ export default function OperativeModal({ isOpen, onClose }: OperativeModalProps)
     } else if (selectedTheme === "light") {
       root.removeAttribute("data-theme");
     } else {
-      // System default
       if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
         root.setAttribute("data-theme", "dark");
       } else {
@@ -45,127 +48,101 @@ export default function OperativeModal({ isOpen, onClose }: OperativeModalProps)
     }
   };
 
-  const handleSaveCovert = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (codename) {
-      localStorage.setItem("covert_codename", codename.trim());
-      if (passkey) localStorage.setItem("covert_passkey", passkey);
-      setCovertSuccess(true);
-      setTimeout(() => {
-        setCovertSuccess(false);
-        onClose();
-        window.location.reload();
-      }, 800);
-    }
-  };
-
-  const handleClearCovert = () => {
-    localStorage.removeItem("covert_codename");
-    localStorage.removeItem("covert_passkey");
-    setCodename("");
-    setPasskey("");
-    window.location.reload();
-  };
-
   if (!isOpen) return null;
 
   const isMasterAdmin =
-    (session?.user as any)?.role === "admin" ||
-    (session?.user as any)?.isAdmin === true;
+    (session?.user as any)?.role === "admin" || (session?.user as any)?.isAdmin === true;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-      {/* Backdrop click to close */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 font-sans">
       <div className="absolute inset-0" onClick={onClose} />
 
-      {/* Modal Box */}
-      <div className="relative w-full max-w-md bg-[#0a182d] border-2 border-[#1e3a63] text-white shadow-2xl rounded-xs overflow-hidden z-10 font-sans">
+      <div className="relative w-full max-w-sm bg-white dark:bg-[#1a1a1b] border border-gray-200 dark:border-[#343536] shadow-2xl rounded-2xl overflow-hidden z-10">
         {/* Header */}
-        <div className="bg-[#051224] text-white px-4 py-3 border-b-2 border-[#c5a059] flex items-center justify-between">
+        <div className="px-5 py-3.5 border-b border-gray-200 dark:border-[#343536] flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-[#c5a059]" />
-            <h3 className="font-serif font-bold text-sm tracking-wider uppercase text-[#f3e6c8]">
-              OFFICIAL CLEARANCE TERMINAL
+            <User className="w-4 h-4 text-blue-500" />
+            <h3 className="font-bold text-sm text-gray-900 dark:text-white">
+              User Account
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-300 hover:text-white font-mono text-sm px-1.5 py-0.5 border border-slate-600 hover:border-slate-400 rounded-xs cursor-pointer"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer p-1 rounded-full hover:bg-gray-100 dark:hover:bg-[#272729]"
           >
-            ✕
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-5 space-y-5 text-xs text-slate-200">
-          {/* Section 1: Active Session or Google Sign In */}
+        <div className="p-5 space-y-4 text-xs">
+          {/* Authenticated User Info */}
           {session?.user ? (
-            <div className="p-3 bg-[#0c2242] border border-[#1e3a63] rounded-xs">
-              <div className="flex items-center gap-3">
-                {session.user.image && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-[#272729] rounded-xl">
+                {session.user.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={session.user.image}
-                    alt={session.user.name || "Operative"}
-                    className="w-10 h-10 rounded-full border border-[#c5a059]"
+                    alt={session.user.name || "User"}
+                    className="w-11 h-11 rounded-full border border-blue-500 object-cover"
                   />
+                ) : (
+                  <div className="w-11 h-11 rounded-full bg-blue-100 dark:bg-blue-950 flex items-center justify-center text-blue-600 font-bold">
+                    {session.user.name?.substring(0, 1) || "U"}
+                  </div>
                 )}
-                <div>
-                  <div className="font-bold text-sm text-white">
+                <div className="min-w-0 flex-1">
+                  <div className="font-bold text-sm text-gray-900 dark:text-white truncate">
                     {session.user.name}
                   </div>
-                  <div className="font-mono text-[11px] text-slate-400">
+                  <div className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
                     {session.user.email}
                   </div>
-                  <div className="mt-1 inline-block">
-                    {isMasterAdmin ? (
-                      <span className="stamp-classified stamp-amber text-[10px]">
-                        ★ LEAD DIRECTORATE CLEARANCE
-                      </span>
-                    ) : (
-                      <span className="stamp-classified stamp-green text-[10px]">
-                        AUTHENTICATED OPERATIVE
-                      </span>
-                    )}
-                  </div>
+                  <span className="inline-block mt-1 px-2 py-0.2 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-full text-[10px] font-medium">
+                    {isMasterAdmin ? "Administrator" : "Member"}
+                  </span>
                 </div>
               </div>
 
-              <div className="mt-3 pt-2 border-t border-[#1e3a63] space-y-2">
+              {/* Action Links */}
+              <div className="space-y-1.5 pt-1">
                 <Link
-                  href={`/profile/${encodeURIComponent(session.user.name || session.user.email || "Operative")}`}
+                  href={`/profile/${encodeURIComponent(session.user.name || session.user.email || "User")}`}
                   onClick={onClose}
-                  className="block text-center py-1.5 px-3 bg-[#0d264a] hover:bg-[#133566] text-[#dfb76c] border border-[#c5a059]/70 font-bold text-xs uppercase tracking-wider rounded-xs transition"
+                  className="flex items-center justify-between p-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272729] text-gray-800 dark:text-gray-200 font-semibold transition"
                 >
-                  View My Operative Dossier & Incidents →
+                  <span>View My Profile & Posts</span>
+                  <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
                 </Link>
 
                 {isMasterAdmin && (
                   <Link
                     href="/admin"
                     onClick={onClose}
-                    className="block text-center py-1.5 px-3 bg-[#071931] hover:bg-[#0c2242] text-[#e6ca85] border border-[#c5a059] font-bold text-xs uppercase tracking-wider rounded-xs transition"
+                    className="flex items-center justify-between p-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272729] text-blue-600 dark:text-blue-400 font-semibold transition"
                   >
-                    Open Directorate Oversight Console →
+                    <span>Admin Oversight Console</span>
+                    <Shield className="w-3.5 h-3.5" />
                   </Link>
                 )}
               </div>
 
               <button
                 onClick={() => signOut()}
-                className="mt-3 w-full py-1.5 px-3 flex items-center justify-center gap-2 border border-rose-900/60 bg-rose-950/40 text-rose-300 hover:bg-rose-900/60 font-bold uppercase tracking-wider rounded-xs transition cursor-pointer"
+                className="w-full py-2 px-3 flex items-center justify-center gap-2 border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 hover:bg-red-100 font-semibold rounded-lg transition cursor-pointer"
               >
                 <LogOut className="w-3.5 h-3.5" />
-                Terminate Authenticated Session
+                <span>Log Out</span>
               </button>
             </div>
           ) : (
-            <div>
-              <label className="block font-serif font-bold text-slate-200 uppercase tracking-wider mb-1.5 text-[11px]">
-                AUTHENTICATE AGENT SESSION
-              </label>
+            <div className="space-y-3">
+              <p className="text-gray-600 dark:text-gray-400">
+                Sign in with Google to post into communities, vote, and interact with the archive.
+              </p>
               <button
                 onClick={() => signIn("google")}
-                className="w-full py-2 px-3 btn-metallic flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-2.5 px-4 bg-white dark:bg-[#272729] hover:bg-gray-50 dark:hover:bg-[#343536] border border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200 font-semibold rounded-xl flex items-center justify-center gap-2 shadow-xs transition cursor-pointer"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
                   <path
@@ -185,132 +162,53 @@ export default function OperativeModal({ isOpen, onClose }: OperativeModalProps)
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                   />
                 </svg>
-                <span className="font-serif text-slate-800 text-xs">
-                  Sign In with Google Account
-                </span>
+                <span>Continue with Google</span>
               </button>
             </div>
           )}
 
-          {/* Section 2: Covert Clearance / Anonymous Codename */}
-          <div className="pt-3 border-t border-[#1e3a63]">
-            <label className="block font-serif font-bold text-slate-200 uppercase tracking-wider mb-1.5 text-[11px]">
-              OR MAINTAIN COVERT CLEARANCE
-            </label>
-            <form onSubmit={handleSaveCovert} className="space-y-2.5">
-              <div>
-                <span className="block text-[11px] text-slate-400 font-mono mb-1">
-                  Operative Codename (Public Alias):
-                </span>
-                <input
-                  type="text"
-                  value={codename}
-                  onChange={(e) => setCodename(e.target.value)}
-                  placeholder="e.g. Agent Phoenix-09"
-                  className="w-full px-2.5 py-1.5 text-xs bg-[#071324] border border-[#1e3a63] font-mono rounded-xs focus:outline-hidden focus:border-[#c5a059] text-white"
-                />
-              </div>
-
-              <div>
-                <span className="block text-[11px] text-slate-400 font-mono mb-1">
-                  Clearance Passkey (For Editing/Redacting Your Submissions):
-                </span>
-                <div className="relative">
-                  <input
-                    type="password"
-                    value={passkey}
-                    onChange={(e) => setPasskey(e.target.value)}
-                    placeholder="Enter secret passphrase"
-                    className="w-full px-2.5 py-1.5 text-xs bg-[#071324] border border-[#1e3a63] font-mono rounded-xs focus:outline-hidden focus:border-[#c5a059] text-white"
-                  />
-                  <Key className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-2" />
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-1">
-                <button
-                  type="submit"
-                  className="flex-1 py-1.5 btn-metallic text-xs font-serif font-bold cursor-pointer"
-                >
-                  Engage Covert Session
-                </button>
-                {codename && (
-                  <button
-                    type="button"
-                    onClick={handleClearCovert}
-                    className="px-2 py-1.5 text-xs text-slate-400 hover:text-rose-400 border border-[#1e3a63] rounded-xs cursor-pointer"
-                  >
-                    Reset
-                  </button>
-                )}
-              </div>
-
-              {covertSuccess && (
-                <div className="text-[11px] text-emerald-400 font-mono flex items-center gap-1 mt-1">
-                  <CheckCircle2 className="w-3 h-3" /> Covert operative profile updated.
-                </div>
-              )}
-            </form>
-          </div>
-
-          {/* Section 3: Interface Luminescence */}
-          <div className="pt-3 border-t border-[#1e3a63]">
-            <span className="block font-serif font-bold text-slate-200 uppercase tracking-wider mb-1.5 text-[11px]">
-              SYSTEM PREFERENCES
-            </span>
-            <div className="flex items-center justify-between p-2 bg-[#071324] border border-[#1e3a63] rounded-xs">
-              <span className="text-[11px] font-mono text-slate-400">
-                Interface Luminescence:
-              </span>
-              <div className="flex gap-1">
-                <button
-                  type="button"
-                  onClick={() => applyTheme("system")}
-                  className={`p-1 rounded-xs border text-[11px] flex items-center gap-1 cursor-pointer ${
-                    theme === "system"
-                      ? "bg-[#071931] text-[#e6ca85] border-[#c5a059]"
-                      : "bg-[#0c2242] text-slate-300 border-[#1e3a63]"
-                  }`}
-                  title="Follow OS Setting"
-                >
-                  <Monitor className="w-3 h-3" /> Auto
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyTheme("light")}
-                  className={`p-1 rounded-xs border text-[11px] flex items-center gap-1 cursor-pointer ${
-                    theme === "light"
-                      ? "bg-[#071931] text-[#e6ca85] border-[#c5a059]"
-                      : "bg-[#0c2242] text-slate-300 border-[#1e3a63]"
-                  }`}
-                  title="Federal Navy Light Mode"
-                >
-                  <Sun className="w-3 h-3" /> Light
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyTheme("dark")}
-                  className={`p-1 rounded-xs border text-[11px] flex items-center gap-1 cursor-pointer ${
-                    theme === "dark"
-                      ? "bg-[#071931] text-[#e6ca85] border-[#c5a059]"
-                      : "bg-[#0c2242] text-slate-300 border-[#1e3a63]"
-                  }`}
-                  title="Surveillance Dark Mode"
-                >
-                  <Moon className="w-3 h-3" /> Dark
-                </button>
-              </div>
+          {/* Theme Selector */}
+          <div className="pt-3 border-t border-gray-100 dark:border-[#272729]">
+            <div className="text-[11px] font-semibold text-gray-500 mb-2">
+              Appearance
             </div>
-          </div>
-
-          {/* Section 4: Administrative Recognition Badge (Safe, No Email Exposed!) */}
-          <div className="p-2.5 bg-[#0c2242] border border-[#c5a059]/40 rounded-xs flex items-start gap-2 text-[11px]">
-            <Shield className="w-4 h-4 text-[#c5a059] shrink-0 mt-0.5" />
-            <div className="text-slate-300">
-              <strong className="text-white font-serif">
-                DIRECTORATE RECOGNITION:
-              </strong>{" "}
-              Authenticated Lead Directorate credentials automatically grant Master Oversight clearance across all dockets and incident records.
+            <div className="grid grid-cols-3 gap-1.5 p-1 bg-gray-100 dark:bg-[#272729] rounded-lg">
+              <button
+                type="button"
+                onClick={() => applyTheme("light")}
+                className={`py-1.5 px-2 rounded-md font-medium text-xs flex items-center justify-center gap-1 transition cursor-pointer ${
+                  theme === "light"
+                    ? "bg-white text-gray-900 shadow-xs"
+                    : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                }`}
+              >
+                <Sun className="w-3.5 h-3.5" />
+                <span>Light</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => applyTheme("dark")}
+                className={`py-1.5 px-2 rounded-md font-medium text-xs flex items-center justify-center gap-1 transition cursor-pointer ${
+                  theme === "dark"
+                    ? "bg-[#1a1a1b] text-white shadow-xs"
+                    : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                }`}
+              >
+                <Moon className="w-3.5 h-3.5" />
+                <span>Dark</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => applyTheme("system")}
+                className={`py-1.5 px-2 rounded-md font-medium text-xs flex items-center justify-center gap-1 transition cursor-pointer ${
+                  theme === "system"
+                    ? "bg-white dark:bg-[#1a1a1b] text-gray-900 dark:text-white shadow-xs"
+                    : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                }`}
+              >
+                <Monitor className="w-3.5 h-3.5" />
+                <span>System</span>
+              </button>
             </div>
           </div>
         </div>

@@ -11,7 +11,8 @@ import {
   ThumbsDown,
   Smile,
   Skull,
-  Heart
+  Heart,
+  Sparkles,
 } from "lucide-react";
 
 interface ReactionConsoleProps {
@@ -58,11 +59,9 @@ export default function ReactionConsole({
       await fetch("/api/reactions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ caseId, type: "stamp", key }),
+        body: JSON.stringify({ caseId, type: "stamp", field: key }),
       });
-    } catch (e) {
-      console.error(e);
-    } finally {
+    } catch {} finally {
       setSubmitting(false);
     }
   };
@@ -76,23 +75,20 @@ export default function ReactionConsole({
       await fetch("/api/reactions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ caseId, type: "emoji", key }),
+        body: JSON.stringify({ caseId, type: "emoji", field: key }),
       });
-    } catch (e) {
-      console.error(e);
-    } finally {
+    } catch {} finally {
       setSubmitting(false);
     }
   };
 
   const handleRate = async (score: number) => {
-    if (userRating) return;
+    if (submitting) return;
     setUserRating(score);
-
-    const newTotal = (ratings.totalScore || 0) + score;
-    const newCount = (ratings.count || 0) + 1;
-    const newAvg = Number((newTotal / newCount).toFixed(1));
-    setRatings({ totalScore: newTotal, count: newCount, average: newAvg });
+    const newCount = ratings.count + 1;
+    const newTotal = ratings.totalScore + score;
+    const newAvg = parseFloat((newTotal / newCount).toFixed(1));
+    setRatings({ count: newCount, totalScore: newTotal, average: newAvg });
 
     try {
       await fetch("/api/reactions", {
@@ -100,76 +96,63 @@ export default function ReactionConsole({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ caseId, type: "rating", score }),
       });
-    } catch (e) {
-      console.error(e);
-    }
+    } catch {}
   };
 
   return (
-    <div className="bg-white dark:bg-[#081426] border border-slate-200 dark:border-[#152744] p-5 rounded-xs shadow-sm space-y-4 font-sans">
-      <div className="border-b border-slate-100 dark:border-[#152744] pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <h4 className="font-serif font-bold text-xs uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-[#071931] dark:text-[#c5a059]" />
-          OFFICIAL CORROBORATION & VERIFICATION CONSOLE
-        </h4>
-        <span className="text-[10px] font-mono text-slate-500 uppercase">
-          EVIDENCE ENDORSEMENT PROTOCOL
+    <div className="reddit-card p-4 space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-gray-100 dark:border-[#272729] pb-3">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-blue-500" />
+          <h4 className="font-bold text-xs uppercase tracking-wider text-gray-900 dark:text-gray-100">
+            Community Reactions & Ratings
+          </h4>
+        </div>
+        <span className="text-[11px] text-gray-400">
+          {ratings.count} reviews recorded
         </span>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-center">
-        {/* Rubber Stamp Reactions */}
-        <div>
-          <span className="block text-[10px] font-mono uppercase text-slate-500 mb-2 font-bold tracking-wider">
-            Field Officer Endorsement Stamps:
-          </span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-center">
+        {/* Verification Status Badges */}
+        <div className="space-y-1.5">
+          <div className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
+            Community Verification:
+          </div>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => handleStamp("verifiedAccurate")}
-              className="stamp-classified stamp-green text-xs flex items-center gap-1.5 hover:scale-105 transition cursor-pointer"
-              title="Endorse as fully verified"
+              className="px-2.5 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs font-medium flex items-center gap-1.5 hover:scale-102 transition cursor-pointer"
             >
-              <CheckCheck className="w-3.5 h-3.5" />
-              VERIFIED [{stamps.verifiedAccurate || 0}]
+              <CheckCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Verified ({stamps.verifiedAccurate || 0})</span>
             </button>
 
             <button
               onClick={() => handleStamp("corroborated")}
-              className="stamp-classified stamp-blue text-xs flex items-center gap-1.5 hover:scale-105 transition cursor-pointer"
-              title="Corroborate with secondary witness"
+              className="px-2.5 py-1.5 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-lg text-xs font-medium flex items-center gap-1.5 hover:scale-102 transition cursor-pointer"
             >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              CORROBORATED [{stamps.corroborated || 0}]
+              <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+              <span>Confirmed ({stamps.corroborated || 0})</span>
             </button>
 
             <button
               onClick={() => handleStamp("flaggedAnomaly")}
-              className="stamp-classified stamp-red text-xs flex items-center gap-1.5 hover:scale-105 transition cursor-pointer"
-              title="Flag critical tactical failure"
+              className="px-2.5 py-1.5 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 rounded-lg text-xs font-medium flex items-center gap-1.5 hover:scale-102 transition cursor-pointer"
             >
-              <AlertTriangle className="w-3.5 h-3.5" />
-              FLAGGED [{stamps.flaggedAnomaly || 0}]
-            </button>
-
-            <button
-              onClick={() => handleStamp("discrepancyDetected")}
-              className="stamp-classified stamp-amber text-xs flex items-center gap-1.5 hover:scale-105 transition cursor-pointer"
-              title="Requires further investigation"
-            >
-              <HelpCircle className="w-3.5 h-3.5" />
-              DISCREPANCY [{stamps.discrepancyDetected || 0}]
+              <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
+              <span>Anomaly ({stamps.flaggedAnomaly || 0})</span>
             </button>
           </div>
         </div>
 
-        {/* Severity Rating Gauge */}
-        <div className="lg:border-l lg:border-slate-200 lg:dark:border-[#152744] lg:pl-5">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[10px] font-mono uppercase text-slate-500 font-bold tracking-wider">
-              Incident Severity Gauge:
-            </span>
-            <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
-              {ratings.average > 0 ? `${ratings.average} / 5.0` : "UNRATED"} ({ratings.count} evaluations)
+        {/* Star Rating Gauge */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-[11px] font-medium text-gray-500 dark:text-gray-400">
+            <span>Rating Score:</span>
+            <span className="font-bold text-gray-900 dark:text-gray-100">
+              {ratings.average > 0 ? `${ratings.average} / 5.0` : "Not rated yet"}
             </span>
           </div>
 
@@ -184,78 +167,71 @@ export default function ReactionConsole({
                   onMouseLeave={() => setHoverRating(null)}
                   onClick={() => handleRate(star)}
                   className="p-1 cursor-pointer hover:scale-110 transition"
-                  title={`Grade Severity ${star}/5`}
+                  title={`Rate ${star}/5`}
                 >
                   <Star
                     className={`w-5 h-5 ${
                       active
                         ? "fill-amber-400 text-amber-500"
-                        : "text-slate-300 dark:text-slate-700"
+                        : "text-gray-300 dark:text-gray-700"
                     }`}
                   />
                 </button>
               );
             })}
-            {userRating && (
-              <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 ml-2">
-                ✓ Recorded
-              </span>
-            )}
           </div>
         </div>
       </div>
 
-      {/* SVG-Powered Operative Reactions Bar (Zero Raw Emojis!) */}
-      <div className="pt-3 border-t border-slate-100 dark:border-[#152744] flex items-center gap-3 flex-wrap">
-        <span className="text-[10px] font-mono uppercase text-slate-500 font-bold tracking-wider">
-          Field Endorsements:
+      {/* SVG Emoji Reaction Bar */}
+      <div className="pt-3 border-t border-gray-100 dark:border-[#272729] flex items-center gap-2 flex-wrap">
+        <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 mr-1">
+          Reactions:
         </span>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleReaction("thumbsUp")}
-            className="px-2.5 py-1 bg-slate-50 dark:bg-[#0c1c33] border border-slate-200 dark:border-[#1e3a63] hover:border-[#c5a059] rounded-xs text-xs font-mono flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-200 transition"
-            title="Concur / Endorse"
-          >
-            <ThumbsUp className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-            <span>{emojis.thumbsUp || 0}</span>
-          </button>
+        <button
+          onClick={() => handleReaction("thumbsUp")}
+          className="px-2.5 py-1 bg-gray-50 dark:bg-[#272729] hover:bg-gray-100 dark:hover:bg-[#343536] border border-gray-200 dark:border-gray-700 rounded-full text-xs flex items-center gap-1.5 cursor-pointer text-gray-700 dark:text-gray-300 transition"
+          title="Thumbs Up"
+        >
+          <ThumbsUp className="w-3.5 h-3.5 text-blue-500" />
+          <span>{emojis.thumbsUp || 0}</span>
+        </button>
 
-          <button
-            onClick={() => handleReaction("thumbsDown")}
-            className="px-2.5 py-1 bg-slate-50 dark:bg-[#0c1c33] border border-slate-200 dark:border-[#1e3a63] hover:border-[#c5a059] rounded-xs text-xs font-mono flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-200 transition"
-            title="Dispute / Contradict"
-          >
-            <ThumbsDown className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-            <span>{emojis.thumbsDown || 0}</span>
-          </button>
+        <button
+          onClick={() => handleReaction("laugh")}
+          className="px-2.5 py-1 bg-gray-50 dark:bg-[#272729] hover:bg-gray-100 dark:hover:bg-[#343536] border border-gray-200 dark:border-gray-700 rounded-full text-xs flex items-center gap-1.5 cursor-pointer text-gray-700 dark:text-gray-300 transition"
+          title="Laugh"
+        >
+          <Smile className="w-3.5 h-3.5 text-amber-500" />
+          <span>{emojis.laugh || 0}</span>
+        </button>
 
-          <button
-            onClick={() => handleReaction("laugh")}
-            className="px-2.5 py-1 bg-slate-50 dark:bg-[#0c1c33] border border-slate-200 dark:border-[#1e3a63] hover:border-[#c5a059] rounded-xs text-xs font-mono flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-200 transition"
-            title="Humorous Occurrence"
-          >
-            <Smile className="w-3.5 h-3.5 text-amber-500" />
-            <span>{emojis.laugh || 0}</span>
-          </button>
+        <button
+          onClick={() => handleReaction("heart")}
+          className="px-2.5 py-1 bg-gray-50 dark:bg-[#272729] hover:bg-gray-100 dark:hover:bg-[#343536] border border-gray-200 dark:border-gray-700 rounded-full text-xs flex items-center gap-1.5 cursor-pointer text-gray-700 dark:text-gray-300 transition"
+          title="Heart"
+        >
+          <Heart className="w-3.5 h-3.5 text-rose-500" />
+          <span>{emojis.heart || 0}</span>
+        </button>
 
-          <button
-            onClick={() => handleReaction("skull")}
-            className="px-2.5 py-1 bg-slate-50 dark:bg-[#0c1c33] border border-slate-200 dark:border-[#1e3a63] hover:border-[#c5a059] rounded-xs text-xs font-mono flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-200 transition"
-            title="Critical Mission Demise"
-          >
-            <Skull className="w-3.5 h-3.5 text-slate-700 dark:text-slate-300" />
-            <span>{emojis.skull || 0}</span>
-          </button>
+        <button
+          onClick={() => handleReaction("skull")}
+          className="px-2.5 py-1 bg-gray-50 dark:bg-[#272729] hover:bg-gray-100 dark:hover:bg-[#343536] border border-gray-200 dark:border-gray-700 rounded-full text-xs flex items-center gap-1.5 cursor-pointer text-gray-700 dark:text-gray-300 transition"
+          title="Dead"
+        >
+          <Skull className="w-3.5 h-3.5 text-purple-500" />
+          <span>{emojis.skull || 0}</span>
+        </button>
 
-          <button
-            onClick={() => handleReaction("heart")}
-            className="px-2.5 py-1 bg-slate-50 dark:bg-[#0c1c33] border border-slate-200 dark:border-[#1e3a63] hover:border-[#c5a059] rounded-xs text-xs font-mono flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-200 transition"
-            title="Wholesome Camaraderie"
-          >
-            <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500/20" />
-            <span>{emojis.heart || 0}</span>
-          </button>
-        </div>
+        <button
+          onClick={() => handleReaction("thumbsDown")}
+          className="px-2.5 py-1 bg-gray-50 dark:bg-[#272729] hover:bg-gray-100 dark:hover:bg-[#343536] border border-gray-200 dark:border-gray-700 rounded-full text-xs flex items-center gap-1.5 cursor-pointer text-gray-700 dark:text-gray-300 transition"
+          title="Thumbs Down"
+        >
+          <ThumbsDown className="w-3.5 h-3.5 text-gray-400" />
+          <span>{emojis.thumbsDown || 0}</span>
+        </button>
       </div>
     </div>
   );

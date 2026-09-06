@@ -1,164 +1,119 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Printer, ShieldAlert, ArrowLeft, Edit3, Trash2, History, Flag, CheckCircle2, AlertTriangle } from "lucide-react";
 import { useSession } from "next-auth/react";
+import {
+  ArrowLeft,
+  MessageSquare,
+  Share2,
+  Flag,
+  Edit3,
+  Bookmark,
+  Check,
+  Paperclip,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  User,
+  Layers,
+  X,
+} from "lucide-react";
 import MediaPlayer from "@/components/MediaPlayer";
 import ReactionConsole from "@/components/ReactionConsole";
 import InvestigatorFieldLog from "@/components/InvestigatorFieldLog";
 import RedactedText from "@/components/RedactedText";
-import { IPost } from "@/models/Post";
 
 export default function PostDetailPage() {
   const params = useParams();
+  const id = params?.id as string;
   const router = useRouter();
   const { data: session } = useSession();
-  const id = params?.id as string;
 
   const [caseFile, setCaseFile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Edit / Amend Modal
   const [amendModalOpen, setAmendModalOpen] = useState(false);
   const [newNarrative, setNewNarrative] = useState("");
   const [amendSummary, setAmendSummary] = useState("");
   const [passkey, setPasskey] = useState("");
   const [amendError, setAmendError] = useState<string | null>(null);
 
-  // Report Anomaly state
+  // Flag / Report Modal
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportReason, setReportReason] = useState("");
-  const [reportCategory, setReportCategory] = useState("discrepancy");
+  const [reportCategory, setReportCategory] = useState("inappropriate");
   const [reportNotes, setReportNotes] = useState("");
   const [reporting, setReporting] = useState(false);
   const [reportSuccess, setReportSuccess] = useState(false);
   const [reportError, setReportError] = useState<string | null>(null);
 
-  // Client-Side Engagement Telemetry: Dwell time & scroll depth
+  const [copied, setCopied] = useState(false);
+
+  // Engagement tracking
+  const startTimeRef = useRef<number>(Date.now());
+  const maxScrollRef = useRef<number>(0);
+
   useEffect(() => {
     if (!id) return;
-    let startTime = Date.now();
-    let accumulatedDwell = 0;
-    let isTabVisible = !document.hidden;
-    let hasScrolled = false;
-    let maxScroll = 0;
-
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        if (isTabVisible) {
-          accumulatedDwell += Math.round((Date.now() - startTime) / 1000);
-          isTabVisible = false;
-        }
-      } else {
-        startTime = Date.now();
-        isTabVisible = true;
-      }
-    };
+    fetchCaseFile();
 
     const handleScroll = () => {
-      const scrollTop = window.scrollY || document.documentElement.scrollTop;
-      const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-      if (scrollHeight > 0) {
-        const pct = Math.round((scrollTop / scrollHeight) * 100);
-        if (pct > maxScroll) maxScroll = pct;
-        if (pct >= 40) hasScrolled = true;
+      const scrollY = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (docHeight > 0) {
+        const pct = Math.round((scrollY / docHeight) * 100);
+        if (pct > maxScrollRef.current) {
+          maxScrollRef.current = Math.min(100, pct);
+        }
       }
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    const sendTelemetry = () => {
-      let finalDwell = accumulatedDwell;
-      if (isTabVisible) {
-        finalDwell += Math.round((Date.now() - startTime) / 1000);
-      }
-      if (finalDwell < 2) return;
-
-      const payload = JSON.stringify({
-        dwellSeconds: finalDwell,
-        scrolled: hasScrolled,
-        scrollPercentage: maxScroll,
-      });
-
-      const endpoint = `/api/files/${id}/engagement`;
-      if (typeof navigator !== "undefined" && navigator.sendBeacon) {
-        navigator.sendBeacon(endpoint, new Blob([payload], { type: "application/json" }));
-      } else {
-        fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: payload,
-          keepalive: true,
-        }).catch(() => {});
-      }
-    };
-
-    window.addEventListener("beforeunload", sendTelemetry);
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("beforeunload", sendTelemetry);
-      sendTelemetry();
+      const dwellSeconds = Math.round((Date.now() - startTimeRef.current) / 1000);
+      if (dwellSeconds > 1 && id) {
+        const payload = JSON.stringify({
+          dwellSeconds,
+          maxScrollPercent: maxScrollRef.current,
+        });
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon(
+            `/api/files/${encodeURIComponent(id)}/engagement`,
+            new Blob([payload], { type: "application/json" })
+          );
+        }
+      }
     };
   }, [id]);
 
-  useEffect(() => {
-    if (id) fetchCase();
-  }, [id]);
-
-  const fetchCase = async () => {
+  const fetchCaseFile = async () => {
+    setLoading(true);
     try {
-      const res = await fetch(`/api/files/${id}`);
+      const res = await fetch(`/api/files/${encodeURIComponent(id)}`);
       const data = await res.json();
       if (data.case) {
         setCaseFile(data.case);
-        setNewNarrative(data.case.debriefNarrative);
+        setNewNarrative(data.case.debriefNarrative || "");
       } else {
-        setError(data.error || "Case file not found.");
+        setError(data.error || "Post not found.");
       }
     } catch (e: any) {
-      setError(e.message || "Failed to retrieve case file.");
+      setError(e.message || "Failed to load post.");
     } finally {
       setLoading(false);
     }
   };
 
-  const isMasterAdmin =
-    (session?.user as any)?.role === "admin" || (session?.user as any)?.isAdmin === true;
-
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const handleRedactToggle = async () => {
-    if (!caseFile) return;
-    const action = caseFile.isRedacted ? "restore" : "redact";
-    const enteredPasskey = passkey || localStorage.getItem("covert_passkey") || "";
-
-    try {
-      const res = await fetch(`/api/files/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action,
-          passkey: enteredPasskey,
-          userEmail: session?.user?.email,
-          amendedBy: session?.user?.name || "Lead Directorate",
-          summary: action === "redact" ? "Redacted under Section 4-B Directive" : "Restored to active index",
-        }),
-      });
-      const data = await res.json();
-      if (data.success && data.case) {
-        setCaseFile(data.case);
-      } else {
-        alert(data.error || "Failed to alter classification.");
-      }
-    } catch (e) {
-      console.error(e);
-    }
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleAmendSubmit = async (e: React.FormEvent) => {
@@ -167,16 +122,16 @@ export default function PostDetailPage() {
     const enteredPasskey = passkey || localStorage.getItem("covert_passkey") || "";
 
     try {
-      const res = await fetch(`/api/files/${id}`, {
+      const res = await fetch(`/api/files/${encodeURIComponent(id)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "amend",
           newNarrative,
-          summary: amendSummary || "Deposition details revised",
+          summary: amendSummary || "Content revised",
           passkey: enteredPasskey,
           userEmail: session?.user?.email,
-          amendedBy: session?.user?.name || "Operative",
+          amendedBy: session?.user?.name || "Author",
         }),
       });
       const data = await res.json();
@@ -184,70 +139,47 @@ export default function PostDetailPage() {
         setCaseFile(data.case);
         setAmendModalOpen(false);
       } else {
-        setAmendError(data.error || "Amendment rejected.");
+        setAmendError(data.error || "Failed to update post.");
       }
-    } catch (e: any) {
-      setAmendError(e.message || "Failed to commit amendment.");
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!confirm("EXPUNGE CASE: Are you sure you wish to permanently shred this record from view?")) return;
-    const enteredPasskey = passkey || localStorage.getItem("covert_passkey") || "";
-
-    try {
-      const res = await fetch(`/api/files/${id}?userEmail=${encodeURIComponent(session?.user?.email || "")}&passkey=${encodeURIComponent(enteredPasskey)}`, {
-        method: "DELETE",
-      });
-      const data = await res.json();
-      if (data.success) {
-        router.push("/home");
-      } else {
-        alert(data.error || "Failed to shred record.");
-      }
-    } catch (e) {
-      console.error(e);
+    } catch (err: any) {
+      setAmendError(err.message || "Failed to update post.");
     }
   };
 
   const handleReportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reportReason.trim()) {
-      setReportError("Reason for anomaly report is required.");
+      setReportError("Please specify a reason for reporting.");
       return;
     }
     setReporting(true);
     setReportError(null);
 
     try {
-      const res = await fetch(`/api/files/${id}/report`, {
+      const res = await fetch(`/api/files/${encodeURIComponent(id)}/report`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          reason: reportReason.trim(),
           category: reportCategory,
+          reason: reportReason.trim(),
           notes: reportNotes.trim(),
-          reporterCodename: session?.user?.name || "Operative",
+          reporterCodename: session?.user?.name || "Community Member",
         }),
       });
-
       const data = await res.json();
       if (data.success) {
         setReportSuccess(true);
-        if (caseFile && data.stamps) {
-          setCaseFile({ ...caseFile, stamps: data.stamps });
-        }
         setTimeout(() => {
           setReportModalOpen(false);
           setReportSuccess(false);
           setReportReason("");
           setReportNotes("");
-        }, 1600);
+        }, 1500);
       } else {
-        setReportError(data.error || "Failed to lodge anomaly report.");
+        setReportError(data.error || "Failed to submit report.");
       }
     } catch (err: any) {
-      setReportError(err.message || "Network error lodging report.");
+      setReportError(err.message || "Network error submitting report.");
     } finally {
       setReporting(false);
     }
@@ -255,254 +187,189 @@ export default function PostDetailPage() {
 
   if (loading) {
     return (
-      <div className="p-12 text-center font-mono text-xs text-slate-500">
-        RETRIEVING CASE FILE EVIDENCE FROM WAREHOUSE...
+      <div className="max-w-4xl mx-auto p-12 text-center text-xs text-gray-500">
+        <div className="animate-spin inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mb-2" />
+        <div>Loading post...</div>
       </div>
     );
   }
 
   if (error || !caseFile) {
     return (
-      <div className="bg-[#fbfaf6] dark:bg-[#0f1722] border-2 border-[#c8c4b7] dark:border-[#273549] p-8 text-center rounded-xs space-y-3 font-mono text-xs">
-        <ShieldAlert className="w-8 h-8 mx-auto text-rose-600" />
-        <div className="font-serif font-bold text-sm text-slate-800 dark:text-slate-200">
-          CASE FILE NOT FOUND OR ARCHIVED
-        </div>
-        <p className="text-slate-500">{error}</p>
-        <Link href="/home" className="btn-metallic px-3 py-1.5 inline-block rounded-xs">
-          Return to Central Repository
+      <div className="max-w-md mx-auto reddit-card p-8 text-center space-y-3">
+        <AlertCircle className="w-8 h-8 text-red-500 mx-auto" />
+        <h2 className="font-bold text-base text-gray-900 dark:text-white">Post Not Found</h2>
+        <p className="text-xs text-gray-500">{error || "This post may have been removed."}</p>
+        <Link href="/home" className="btn-primary text-xs inline-block">
+          Return to Feed
         </Link>
       </div>
     );
   }
 
+  const formattedDate = new Date(caseFile.createdAt).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
   return (
-    <div className="max-w-6xl mx-auto space-y-4 print:space-y-2">
-      {/* Top Utility / Breadcrumb Bar */}
-      <div className="no-print bg-[#ede9dc] dark:bg-[#0f1722] border-2 border-[#c8c4b7] dark:border-[#273549] p-2.5 rounded-xs flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
-        <div className="flex items-center gap-2">
-          <Link href="/home" className="hover:underline flex items-center gap-1 text-slate-700 dark:text-slate-300">
-            <ArrowLeft className="w-3.5 h-3.5" /> Registry
-          </Link>
-          <span className="text-slate-400">/</span>
-          <Link href={`/archive/${caseFile.docketSlug}`} className="hover:underline text-slate-700 dark:text-slate-300">
-            {caseFile.docketName}
-          </Link>
-          <span className="text-slate-400">/</span>
-          <span className="font-bold text-[#071931] dark:text-[#dfb76c]">{caseFile.caseNumber}</span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handlePrint}
-            className="btn-metallic px-3 py-1 text-xs font-serif font-bold rounded-xs flex items-center gap-1 cursor-pointer"
-          >
-            <Printer className="w-3.5 h-3.5" /> Print Official Deposition
-          </button>
-
-          <button
-            onClick={() => setAmendModalOpen(true)}
-            className="btn-metallic px-2.5 py-1 text-xs font-serif font-bold rounded-xs flex items-center gap-1 cursor-pointer"
-          >
-            <Edit3 className="w-3.5 h-3.5" /> Amend
-          </button>
-
-          <button
-            onClick={() => {
-              setReportError(null);
-              setReportSuccess(false);
-              setReportModalOpen(true);
-            }}
-            className="btn-metallic px-2.5 py-1 text-xs font-serif font-bold rounded-xs flex items-center gap-1 cursor-pointer text-amber-300 hover:text-rose-400"
-            title="Flag Record / File Anomaly Report"
-          >
-            <Flag className="w-3.5 h-3.5 text-rose-500" /> Flag / Report
-          </button>
-
-          <button
-            onClick={handleRedactToggle}
-            className="btn-metallic px-2.5 py-1 text-xs font-serif font-bold rounded-xs flex items-center gap-1 cursor-pointer text-amber-700"
-          >
-            {caseFile.isRedacted ? "De-Censor" : "Censor (Redact)"}
-          </button>
-
-          {isMasterAdmin && (
-            <button
-              onClick={handleDelete}
-              className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xs flex items-center gap-1 cursor-pointer"
-              title="Shred Record (Directorate Access)"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
+    <div className="max-w-4xl mx-auto space-y-4 font-sans">
+      {/* Top Breadcrumb */}
+      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+        <Link href="/home" className="hover:underline flex items-center gap-1">
+          <ArrowLeft className="w-3.5 h-3.5" /> All Feeds
+        </Link>
+        <span>/</span>
+        <Link href={`/archive/${caseFile.docketSlug}`} className="hover:underline font-semibold text-gray-900 dark:text-gray-100">
+          c/{caseFile.docketSlug}
+        </Link>
       </div>
 
-      {/* Main Deposition Card */}
-      <div className="print-document bg-[#fbfaf6] dark:bg-[#0f1722] border-2 border-[#c8c4b7] dark:border-[#273549] rounded-xs shadow-lg p-5 sm:p-7 space-y-6 font-sans">
-        {/* Document Classification Banner */}
-        <div className="border-b-2 border-[#071931] dark:border-[#c5a059] pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <div className="text-[10px] font-mono tracking-widest uppercase text-slate-500">
-              OFFICIAL INCIDENT DEPOSITION // CASE RECORD
-            </div>
-            <h2 className="text-xl sm:text-2xl font-serif font-bold tracking-wider text-slate-900 dark:text-white uppercase">
-              {caseFile.caseNumber}: {caseFile.title}
-            </h2>
-            <div className="text-xs font-mono text-slate-600 dark:text-slate-400">
-              LODGED IN: <span className="font-bold">{caseFile.docketName}</span> &bull; DATE:{" "}
-              <span>{new Date(caseFile.createdAt).toLocaleDateString()}</span>
-            </div>
+      {/* Main Post Container */}
+      <article className="reddit-card p-5 sm:p-6 space-y-4">
+        {/* Post Metadata Header */}
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500 dark:text-gray-400 pb-3 border-b border-gray-100 dark:border-[#272729]">
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/archive/${caseFile.docketSlug}`}
+              className="font-bold text-gray-900 dark:text-white hover:underline"
+            >
+              c/{caseFile.docketSlug}
+            </Link>
+            <span>•</span>
+            <span>Posted by</span>
+            <Link
+              href={`/profile/${encodeURIComponent(caseFile.author.codename || "User")}`}
+              className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              u/{caseFile.author.codename}
+            </Link>
+            <span>•</span>
+            <span>{formattedDate}</span>
           </div>
 
-          <div className="flex items-center gap-2">
-            {caseFile.isRedacted && (
-              <span className="stamp-classified stamp-red text-xs">
-                CENSORED UNDER DIRECTIVE 4-B
-              </span>
-            )}
-            <span
-              className={`stamp-classified text-xs ${
-                caseFile.classificationTier === "RESTRICTED"
-                  ? "stamp-red"
-                  : "stamp-amber"
-              }`}
-            >
-              {caseFile.classificationTier}
-            </span>
-          </div>
+          <span className="px-2.5 py-0.5 bg-gray-100 dark:bg-[#272729] text-gray-700 dark:text-gray-300 rounded-full text-xs font-medium">
+            {caseFile.docketName}
+          </span>
         </div>
 
-        {/* Two-Column Grid: Evidence Media Player (Left) + Official Deposition Narrative (Right) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left: Media Surveillance Player (5 Cols) */}
-          <div className="lg:col-span-6 space-y-3">
+        {/* Post Title */}
+        <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white leading-snug">
+          {caseFile.isRedacted ? "[Redacted Post]" : caseFile.title}
+        </h1>
+
+        {/* Media Player / Attachments */}
+        {caseFile.attachments?.length > 0 && (
+          <div className="rounded-xl overflow-hidden bg-black/90 border border-gray-200 dark:border-gray-800">
             <MediaPlayer
               attachments={caseFile.attachments}
               caseNumber={caseFile.caseNumber}
             />
           </div>
+        )}
 
-          {/* Right: Deposition Narrative & Investigator Record (7 Cols) */}
-          <div className="lg:col-span-6 space-y-4">
-            <div className="bg-[#ede9dc] dark:bg-[#16202c] px-3 py-1.5 border border-[#c8c4b7] dark:border-[#273549] font-serif font-bold text-xs uppercase flex items-center justify-between">
-              <span className="text-slate-800 dark:text-slate-100">
-                OFFICIAL DEPOSITION NARRATIVE
-              </span>
-              <span className="text-[10px] font-mono text-slate-500">
-                BY:{" "}
-                <Link
-                  href={`/profile/${encodeURIComponent(caseFile.author.codename || "Operative")}`}
-                  className="hover:underline text-[#071931] dark:text-[#dfb76c] font-bold transition-colors"
-                  title="View Operative Dossier"
-                >
-                  {caseFile.author.codename}
-                </Link>
-              </span>
-            </div>
-
-            {/* Formatted Long Narrative */}
-            <div className="p-4 bg-white dark:bg-slate-900 border border-[#c8c4b7] dark:border-[#273549] rounded-xs font-serif text-sm leading-relaxed text-slate-800 dark:text-slate-200 whitespace-pre-wrap">
-              <RedactedText content={caseFile.debriefNarrative} />
-            </div>
-
-            {/* Amendment History Log */}
-            {caseFile.amendments?.length > 0 && (
-              <div className="p-3 bg-[#ede9dc]/50 dark:bg-[#16202c]/50 border border-[#c8c4b7] dark:border-[#273549] rounded-xs space-y-2 text-xs font-mono">
-                <div className="font-bold flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
-                  <History className="w-3.5 h-3.5 text-[#c5a059]" />
-                  REVISION AUDIT TRAIL ({caseFile.amendments.length} AMENDMENTS LOGGED)
-                </div>
-                <div className="space-y-1.5 divide-y divide-slate-300/60 dark:divide-slate-700">
-                  {caseFile.amendments.map((amend: any, idx: number) => (
-                    <div key={idx} className="pt-1.5 text-[11px] text-slate-600 dark:text-slate-400">
-                      <span className="font-bold text-slate-800 dark:text-slate-200">
-                        {new Date(amend.timestamp).toLocaleDateString()}:
-                      </span>{" "}
-                      {amend.summary} &mdash; <em>filed by {amend.amendedBy}</em>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+        {/* Post Narrative Text */}
+        <div className="text-sm sm:text-base text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap pt-2">
+          <RedactedText content={caseFile.debriefNarrative} />
         </div>
 
-        {/* Corroboration Console */}
-        <ReactionConsole
-          caseId={caseFile.caseNumber || (caseFile as any)._id}
-          initialStamps={caseFile.stamps}
-          initialEmojis={caseFile.emojis}
-          initialRatings={caseFile.ratings}
-        />
+        {/* Bottom Actions Ribbon */}
+        <div className="pt-4 border-t border-gray-100 dark:border-[#272729] flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-[#272729] transition-colors cursor-pointer"
+            >
+              {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Share2 className="w-4 h-4" />}
+              <span>{copied ? "Link Copied" : "Share"}</span>
+            </button>
 
-        {/* Investigator Field Notes Log Stream */}
-        <InvestigatorFieldLog caseId={caseFile.caseNumber || (caseFile as any)._id} />
-      </div>
+            <button
+              onClick={() => setAmendModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-[#272729] transition-colors cursor-pointer"
+            >
+              <Edit3 className="w-4 h-4" />
+              <span>Edit</span>
+            </button>
 
-      {/* Amend Modal */}
+            <button
+              onClick={() => setReportModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-[#272729] hover:text-red-500 transition-colors cursor-pointer"
+            >
+              <Flag className="w-4 h-4" />
+              <span>Report</span>
+            </button>
+          </div>
+        </div>
+      </article>
+
+      {/* Community Reactions Bar */}
+      <ReactionConsole
+        caseId={caseFile.caseNumber || (caseFile as any)._id}
+        initialStamps={caseFile.stamps}
+        initialEmojis={caseFile.emojis}
+        initialRatings={caseFile.ratings}
+      />
+
+      {/* Threaded Comments Section */}
+      <InvestigatorFieldLog caseId={caseFile.caseNumber || (caseFile as any)._id} />
+
+      {/* Edit Modal (Clean, No prefilled clutter) */}
       {amendModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 font-sans">
-          <div className="bg-white dark:bg-[#111822] border-2 border-[#7c8798] p-5 max-w-lg w-full rounded-xs shadow-2xl space-y-4">
-            <h3 className="font-serif font-bold text-sm uppercase text-slate-900 dark:text-white">
-              LODGE FORMAL DEPOSITION AMENDMENT
-            </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="bg-white dark:bg-[#1a1a1b] border border-gray-200 dark:border-[#343536] p-5 max-w-lg w-full rounded-xl shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-gray-200 dark:border-[#343536]">
+              <h3 className="font-bold text-sm text-gray-900 dark:text-white">
+                Edit Post Content
+              </h3>
+              <button
+                onClick={() => setAmendModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 cursor-pointer p-1 rounded-full hover:bg-gray-100 dark:hover:bg-[#272729]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
             <form onSubmit={handleAmendSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-600 dark:text-slate-400 font-mono mb-1">
-                  Amended Narrative Content:
+                <label className="block font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Updated Content:
                 </label>
                 <textarea
                   rows={6}
                   value={newNarrative}
                   onChange={(e) => setNewNarrative(e.target.value)}
-                  className="w-full p-2 border border-slate-300 dark:border-slate-700 rounded-xs bg-slate-50 dark:bg-slate-900 font-serif"
+                  placeholder="Enter updated content..."
+                  className="w-full p-2.5 bg-gray-50 dark:bg-[#272729] border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-hidden focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-600 dark:text-slate-400 font-mono mb-1">
-                  Summary of Changes / Justification:
+                <label className="block font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Reason for Edit:
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Corrected timestamp and added tactical context"
+                  placeholder="Brief note on what was updated"
                   value={amendSummary}
                   onChange={(e) => setAmendSummary(e.target.value)}
-                  className="w-full p-2 border border-slate-300 dark:border-slate-700 rounded-xs bg-slate-50 dark:bg-slate-900 font-mono"
+                  className="w-full p-2 bg-gray-50 dark:bg-[#272729] border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-hidden focus:border-blue-500"
                 />
               </div>
 
-              <div>
-                <label className="block text-slate-600 dark:text-slate-400 font-mono mb-1">
-                  Clearance Passkey (if not logged in as Lead Directorate):
-                </label>
-                <input
-                  type="password"
-                  placeholder="Enter secret passkey"
-                  value={passkey}
-                  onChange={(e) => setPasskey(e.target.value)}
-                  className="w-full p-2 border border-slate-300 dark:border-slate-700 rounded-xs bg-slate-50 dark:bg-slate-900 font-mono"
-                />
-              </div>
+              {amendError && <div className="text-red-500">{amendError}</div>}
 
-              {amendError && (
-                <div className="text-rose-600 font-mono text-xs">{amendError}</div>
-              )}
-
-              <div className="flex justify-end gap-2 pt-2 border-t">
+              <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-[#272729]">
                 <button
                   type="button"
                   onClick={() => setAmendModalOpen(false)}
-                  className="px-3 py-1.5 border border-slate-300 text-slate-600 rounded-xs"
+                  className="px-3.5 py-1.5 border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300 rounded-full cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="btn-metallic px-4 py-1.5 font-serif font-bold rounded-xs cursor-pointer"
-                >
-                  File Amendment
+                <button type="submit" className="btn-primary py-1.5 px-4 cursor-pointer">
+                  Save Changes
                 </button>
               </div>
             </form>
@@ -510,104 +377,79 @@ export default function PostDetailPage() {
         </div>
       )}
 
-      {/* Flag / Report Anomaly Modal */}
+      {/* Report Modal (Clean, No prefilled clutter) */}
       {reportModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 font-sans backdrop-blur-xs">
-          <div className="bg-white dark:bg-[#111822] border-2 border-rose-900/60 p-5 max-w-md w-full rounded-xs shadow-2xl space-y-4">
-            <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
-              <div className="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-950/60 border border-rose-400 flex items-center justify-center">
-                <Flag className="w-4 h-4 text-rose-600" />
-              </div>
-              <div>
-                <h3 className="font-serif font-bold text-sm uppercase text-slate-900 dark:text-white">
-                  FILE ANOMALY REPORT / CODE BREACH
-                </h3>
-                <p className="font-mono text-[10px] text-slate-500">
-                  FLAG CASE {caseFile.caseNumber} FOR REPOSITORY AUDIT
-                </p>
-              </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="bg-white dark:bg-[#1a1a1b] border border-gray-200 dark:border-[#343536] p-5 max-w-md w-full rounded-xl shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-gray-200 dark:border-[#343536]">
+              <h3 className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-1.5">
+                <Flag className="w-4 h-4 text-red-500" />
+                Report Post
+              </h3>
+              <button
+                onClick={() => setReportModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 cursor-pointer p-1 rounded-full hover:bg-gray-100 dark:hover:bg-[#272729]"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            {reportSuccess ? (
-              <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-400 rounded-xs text-center space-y-1 font-mono text-xs text-emerald-800 dark:text-emerald-300">
-                <CheckCircle2 className="w-6 h-6 text-emerald-600 mx-auto" />
-                <div className="font-bold">ANOMALY LODGED IN AUDIT STREAM</div>
-                <p className="text-[11px] text-slate-600 dark:text-slate-400">
-                  AI ranking weights updated. Incident credibility score adjusted.
-                </p>
+            <form onSubmit={handleReportSubmit} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Reason for Reporting:
+                </label>
+                <select
+                  value={reportCategory}
+                  onChange={(e) => setReportCategory(e.target.value)}
+                  className="w-full p-2 bg-gray-50 dark:bg-[#272729] border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-hidden focus:border-blue-500"
+                >
+                  <option value="inappropriate">Inappropriate content</option>
+                  <option value="spam">Spam or advertising</option>
+                  <option value="harassment">Harassment or bullying</option>
+                  <option value="misinformation">Misinformation</option>
+                  <option value="other">Other issue</option>
+                </select>
               </div>
-            ) : (
-              <form onSubmit={handleReportSubmit} className="space-y-3 text-xs">
-                <div>
-                  <label className="block font-mono font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
-                    Anomaly Classification:
-                  </label>
-                  <select
-                    value={reportCategory}
-                    onChange={(e) => setReportCategory(e.target.value)}
-                    className="w-full p-2 border border-slate-300 dark:border-slate-700 rounded-xs bg-slate-50 dark:bg-slate-900 font-mono text-xs"
-                  >
-                    <option value="discrepancy">Discrepancy / Inaccurate Incident Facts</option>
-                    <option value="sensitive">Sensitive / Non-Consensual Intel Exhibit</option>
-                    <option value="spoiler">Unredacted Spoiler / Directive Leak</option>
-                    <option value="malicious">Malicious / Harassment Deposition</option>
-                    <option value="other">Other Protocol Breach</option>
-                  </select>
-                </div>
 
-                <div>
-                  <label className="block font-mono font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
-                    Reason for Anomaly Flag *:
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Describe discrepancy or violation..."
-                    value={reportReason}
-                    onChange={(e) => setReportReason(e.target.value)}
-                    className="w-full p-2 border border-slate-300 dark:border-slate-700 rounded-xs bg-slate-50 dark:bg-slate-900 font-serif"
-                  />
-                </div>
+              <div>
+                <label className="block font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Details / Explanation:
+                </label>
+                <textarea
+                  rows={3}
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  placeholder="Explain why this post should be reviewed..."
+                  required
+                  className="w-full p-2 bg-gray-50 dark:bg-[#272729] border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-hidden focus:border-blue-500"
+                />
+              </div>
 
-                <div>
-                  <label className="block font-mono font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
-                    Operative Field Notes (Optional):
-                  </label>
-                  <textarea
-                    rows={3}
-                    placeholder="Optional corroborating details or timestamp..."
-                    value={reportNotes}
-                    onChange={(e) => setReportNotes(e.target.value)}
-                    className="w-full p-2 border border-slate-300 dark:border-slate-700 rounded-xs bg-slate-50 dark:bg-slate-900 font-serif text-xs"
-                  />
+              {reportError && <div className="text-red-500">{reportError}</div>}
+              {reportSuccess && (
+                <div className="text-emerald-500 font-semibold">
+                  Report submitted. Thank you for keeping the community safe.
                 </div>
+              )}
 
-                {reportError && (
-                  <div className="p-2 bg-rose-50 border border-rose-300 text-rose-700 rounded-xs font-mono text-[11px] flex items-center gap-1.5">
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                    <span>{reportError}</span>
-                  </div>
-                )}
-
-                <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => setReportModalOpen(false)}
-                    className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 rounded-xs"
-                  >
-                    Dismiss
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={reporting}
-                    className="px-4 py-1.5 bg-rose-700 hover:bg-rose-800 text-white font-serif font-bold text-xs rounded-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                  >
-                    <Flag className="w-3.5 h-3.5" />
-                    <span>{reporting ? "Filing..." : "Transmit Anomaly Flag"}</span>
-                  </button>
-                </div>
-              </form>
-            )}
+              <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-[#272729]">
+                <button
+                  type="button"
+                  onClick={() => setReportModalOpen(false)}
+                  className="px-3.5 py-1.5 border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300 rounded-full cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={reporting}
+                  className="btn-primary py-1.5 px-4 cursor-pointer bg-red-600 hover:bg-red-700"
+                >
+                  {reporting ? "Submitting..." : "Submit Report"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

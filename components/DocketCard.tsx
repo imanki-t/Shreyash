@@ -1,8 +1,20 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { Play, FileText, Film, Volume2, ShieldCheck, AlertTriangle } from "lucide-react";
+import {
+  ArrowBigUp,
+  ArrowBigDown,
+  MessageSquare,
+  Share2,
+  Bookmark,
+  Play,
+  Volume2,
+  FileText,
+  Sparkles,
+  Paperclip,
+  Check,
+} from "lucide-react";
 import { IPost } from "@/models/Post";
 import RedactedText from "./RedactedText";
 
@@ -17,99 +29,202 @@ export default function DocketCard({ post }: DocketCardProps) {
   const hasImage = post.attachments?.some((a) => a.mediaType === "image");
   const firstImage = post.attachments?.find((a) => a.mediaType === "image");
 
+  const [voteCount, setVoteCount] = useState<number>(
+    (post.emojis?.thumbsUp || 0) - (post.emojis?.thumbsDown || 0) + (post.stamps?.verifiedAccurate || 0)
+  );
+  const [userVote, setUserVote] = useState<1 | -1 | 0>(0);
+  const [copied, setCopied] = useState(false);
+
+  const handleVote = async (delta: 1 | -1, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (userVote === delta) {
+      setUserVote(0);
+      setVoteCount((prev) => prev - delta);
+    } else {
+      const diff = userVote === 0 ? delta : delta * 2;
+      setUserVote(delta);
+      setVoteCount((prev) => prev + diff);
+    }
+
+    try {
+      await fetch("/api/reactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          caseId,
+          type: "emoji",
+          field: delta === 1 ? "thumbsUp" : "thumbsDown",
+        }),
+      });
+    } catch {}
+  };
+
+  const handleShare = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigator.clipboard.writeText(`${window.location.origin}/post/${caseId}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const formattedDate = new Date(post.createdAt).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+
   return (
-    <div className="relative bg-[#f5f1e3] dark:bg-[#111822] border-2 border-[#b8b3a5] dark:border-[#273549] rounded-xs shadow-md p-4 flex flex-col justify-between font-sans hover:border-[#7c8798] transition-all group">
-      {/* Folder Tab at Top */}
-      <div className="absolute -top-3.5 left-3 bg-[#e2dcce] dark:bg-[#1a2332] border-t-2 border-x-2 border-[#b8b3a5] dark:border-[#273549] px-2.5 py-0.5 rounded-t-xs text-[10px] font-mono font-bold text-[#071931] dark:text-[#dfb76c] tracking-wider uppercase">
-        FILE: {post.caseNumber}
+    <article className="reddit-card flex flex-col sm:flex-row overflow-hidden group">
+      {/* Left Vertical Vote Bar (Desktop) */}
+      <div className="hidden sm:flex flex-col items-center py-3 px-2 bg-gray-50/50 dark:bg-[#161a1d] border-r border-gray-100 dark:border-[#272729] shrink-0 w-11">
+        <button
+          onClick={(e) => handleVote(1, e)}
+          className={`p-1 rounded-sm hover:bg-gray-200 dark:hover:bg-[#272729] transition-colors cursor-pointer ${
+            userVote === 1 ? "text-orange-500" : "text-gray-400 hover:text-orange-500"
+          }`}
+          title="Upvote"
+        >
+          <ArrowBigUp className={`w-5 h-5 ${userVote === 1 ? "fill-current" : ""}`} />
+        </button>
+
+        <span
+          className={`text-xs font-bold my-0.5 ${
+            userVote === 1
+              ? "text-orange-500"
+              : userVote === -1
+              ? "text-blue-500"
+              : "text-gray-700 dark:text-gray-300"
+          }`}
+        >
+          {voteCount}
+        </span>
+
+        <button
+          onClick={(e) => handleVote(-1, e)}
+          className={`p-1 rounded-sm hover:bg-gray-200 dark:hover:bg-[#272729] transition-colors cursor-pointer ${
+            userVote === -1 ? "text-blue-500" : "text-gray-400 hover:text-blue-500"
+          }`}
+          title="Downvote"
+        >
+          <ArrowBigDown className={`w-5 h-5 ${userVote === -1 ? "fill-current" : ""}`} />
+        </button>
       </div>
 
-      {/* Rubber Stamp in Corner */}
-      <div className="absolute top-2 right-3 rotate-2 pointer-events-none">
-        {post.isRedacted ? (
-          <span className="stamp-classified stamp-red text-[9px]">
-            CENSORED
-          </span>
-        ) : post.stamps?.verifiedAccurate > 0 ? (
-          <span className="stamp-classified stamp-green text-[9px]">
-            VERIFIED
-          </span>
-        ) : (
-          <span className="stamp-classified stamp-amber text-[9px]">
-            UNDER REVIEW
-          </span>
-        )}
-      </div>
+      {/* Main Post Card Content */}
+      <div className="flex-1 p-3.5 sm:p-4 flex flex-col justify-between space-y-3 min-w-0">
+        <div className="space-y-2">
+          {/* Post Header Meta */}
+          <div className="flex flex-wrap items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+            <Link
+              href={`/archive/${post.docketSlug}`}
+              className="font-bold text-gray-900 dark:text-gray-200 hover:underline hover:text-blue-600 dark:hover:text-blue-400"
+            >
+              c/{post.docketSlug}
+            </Link>
+            <span>•</span>
+            <span>Posted by</span>
+            <Link
+              href={`/profile/${encodeURIComponent(post.author?.codename || "User")}`}
+              className="hover:underline hover:text-blue-600 dark:hover:text-blue-400 font-medium"
+            >
+              u/{post.author?.codename || "Anonymous"}
+            </Link>
+            <span>•</span>
+            <span className="text-[11px]">{formattedDate}</span>
 
-      <div>
-        {/* Media Thumbnail Container */}
-        <div className="mt-2 relative aspect-video bg-black/80 rounded-xs overflow-hidden border border-[#b8b3a5] dark:border-slate-700 flex items-center justify-center">
-          {firstImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={`/api/media/${firstImage.fileId}`}
-              alt={post.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-            />
-          ) : hasVideo ? (
-            <div className="flex flex-col items-center justify-center text-slate-300 gap-1">
-              <div className="w-10 h-10 rounded-full bg-[#071931]/80 border border-[#c5a059] flex items-center justify-center">
-                <Play className="w-4 h-4 text-[#dfb76c] ml-0.5" />
-              </div>
-              <span className="text-[10px] font-mono text-emerald-400">SURVEILLANCE VIDEO</span>
-            </div>
-          ) : hasAudio ? (
-            <div className="flex flex-col items-center justify-center text-slate-300 gap-1">
-              <Volume2 className="w-8 h-8 text-[#dfb76c]" />
-              <span className="text-[10px] font-mono text-amber-300">AUDIO INTERCEPT REEL</span>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center text-slate-400 gap-1">
-              <FileText className="w-8 h-8 text-[#c5a059]" />
-              <span className="text-[10px] font-mono">OFFICIAL DEPOSITION</span>
-            </div>
-          )}
-
-          {/* Media Badges */}
-          <div className="absolute bottom-1 left-1.5 flex gap-1 font-mono text-[9px] text-white bg-black/70 px-1 rounded-xs">
-            {hasVideo && <span>VIDEO</span>}
-            {hasAudio && <span>AUDIO</span>}
-            {hasImage && <span>PHOTO</span>}
+            {/* Flair Badge */}
+            <span className="ml-auto px-2 py-0.5 bg-gray-100 dark:bg-[#272729] text-gray-700 dark:text-gray-300 rounded-full text-[10px] font-medium border border-gray-200 dark:border-gray-700">
+              {post.docketName}
+            </span>
           </div>
-        </div>
 
-        {/* Title and Excerpt */}
-        <div className="mt-3 space-y-1">
-          <h3 className="font-serif font-bold text-sm text-slate-900 dark:text-white leading-tight line-clamp-2">
-            <Link href={`/post/${caseId}`} className="hover:underline">
-              {post.title}
+          {/* Title */}
+          <h3 className="font-bold text-base sm:text-lg text-gray-900 dark:text-gray-100 leading-snug hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+            <Link href={`/post/${caseId}`}>
+              {post.isRedacted ? "[Redacted Content]" : post.title}
             </Link>
           </h3>
-          <div className="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 italic pt-1">
+
+          {/* Excerpt with Spoilers */}
+          <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 line-clamp-3 leading-relaxed">
             <RedactedText content={post.debriefNarrative} />
           </div>
-        </div>
-      </div>
 
-      {/* Card Footer */}
-      <div className="mt-4 pt-2 border-t border-[#c8c4b7] dark:border-[#273549] flex items-center justify-between text-[11px] font-mono text-slate-500">
-        <div>
-          BY:{" "}
-          <Link
-            href={`/profile/${encodeURIComponent(post.author?.codename || "Operative")}`}
-            className="text-slate-800 dark:text-slate-200 font-bold hover:underline hover:text-[#071931] dark:hover:text-[#dfb76c] transition-colors"
-            title="View Operative Profile"
-          >
-            {post.author?.codename || "Operative"}
-          </Link>
+          {/* Media Preview (if attached) */}
+          {(firstImage || hasVideo || hasAudio) && (
+            <div className="mt-2 rounded-lg overflow-hidden bg-black/90 border border-gray-200 dark:border-gray-800 max-h-80 flex items-center justify-center">
+              {firstImage ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={`/api/media/${firstImage.fileId}`}
+                  alt={post.title}
+                  className="w-full max-h-80 object-contain hover:scale-101 transition duration-200"
+                />
+              ) : hasVideo ? (
+                <div className="p-8 flex flex-col items-center justify-center gap-2 text-gray-200">
+                  <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center shadow-lg">
+                    <Play className="w-5 h-5 text-white ml-0.5" />
+                  </div>
+                  <span className="text-xs font-semibold">Video Media</span>
+                </div>
+              ) : (
+                <div className="p-8 flex flex-col items-center justify-center gap-2 text-gray-200">
+                  <div className="w-12 h-12 rounded-full bg-amber-600 flex items-center justify-center shadow-lg">
+                    <Volume2 className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-xs font-semibold">Audio Recording</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-        <Link
-          href={`/post/${caseId}`}
-          className="btn-metallic px-2 py-0.5 text-[10px] font-serif font-bold rounded-xs cursor-pointer"
-        >
-          Examine Case →
-        </Link>
+
+        {/* Bottom Actions Bar */}
+        <div className="pt-2 border-t border-gray-100 dark:border-[#272729] flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+          {/* Mobile Upvote Controls */}
+          <div className="flex sm:hidden items-center gap-1 bg-gray-100 dark:bg-[#272729] px-2 py-1 rounded-full">
+            <button
+              onClick={(e) => handleVote(1, e)}
+              className={`p-0.5 ${userVote === 1 ? "text-orange-500" : ""}`}
+            >
+              <ArrowBigUp className="w-4 h-4" />
+            </button>
+            <span className="text-xs font-bold px-1">{voteCount}</span>
+            <button
+              onClick={(e) => handleVote(-1, e)}
+              className={`p-0.5 ${userVote === -1 ? "text-blue-500" : ""}`}
+            >
+              <ArrowBigDown className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/post/${caseId}`}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-[#272729] transition-colors"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>Discussion</span>
+            </Link>
+
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-[#272729] transition-colors cursor-pointer"
+            >
+              {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Share2 className="w-4 h-4" />}
+              <span>{copied ? "Copied!" : "Share"}</span>
+            </button>
+          </div>
+
+          {post.attachments?.length > 0 && (
+            <span className="text-[11px] text-gray-400 flex items-center gap-1">
+              <Paperclip className="w-3.5 h-3.5" />
+              {post.attachments.length} file(s)
+            </span>
+          )}
+        </div>
       </div>
-    </div>
+    </article>
   );
 }
