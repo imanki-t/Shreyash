@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import Script from "next/script";
 import { Upload, FileText, Film, Music, Shield, Key, CheckCircle, AlertCircle } from "lucide-react";
 import AgencyCrest from "@/components/AgencyCrest";
 import { DEFAULT_DOCKETS, DocketItem } from "@/lib/defaultDockets";
@@ -99,6 +100,26 @@ export default function UploadPage() {
 
     for (const file of selectedFiles) {
       formData.append("attachments", file);
+    }
+
+    // Execute Google reCAPTCHA v3 if site key is configured
+    const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+    if (siteKey && typeof window !== "undefined" && (window as any).grecaptcha) {
+      try {
+        const token = await new Promise<string>((resolve) => {
+          (window as any).grecaptcha.ready(() => {
+            (window as any).grecaptcha
+              .execute(siteKey, { action: "submit_deposition" })
+              .then((t: string) => resolve(t))
+              .catch(() => resolve(""));
+          });
+        });
+        if (token) {
+          formData.append("recaptchaToken", token);
+        }
+      } catch (e) {
+        console.warn("reCAPTCHA execution skipped:", e);
+      }
     }
 
     try {
@@ -391,6 +412,13 @@ export default function UploadPage() {
           </div>
         </form>
       </div>
+
+      {process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && (
+        <Script
+          src={`https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`}
+          strategy="lazyOnload"
+        />
+      )}
     </div>
   );
 }

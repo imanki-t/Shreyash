@@ -4,6 +4,7 @@ import { Post, IAttachment } from "@/models/Post";
 import bcrypt from "bcryptjs";
 import sanitizeHtml from "sanitize-html";
 import { DEFAULT_DOCKETS } from "@/lib/defaultDockets";
+import { verifyRecaptcha } from "@/lib/recaptcha";
 
 export async function GET(req: NextRequest) {
   try {
@@ -53,6 +54,15 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
+    const recaptchaToken = formData.get("recaptchaToken") as string;
+    const recaptchaResult = await verifyRecaptcha(recaptchaToken);
+    if (!recaptchaResult.success) {
+      return NextResponse.json(
+        { error: recaptchaResult.error || "Anti-automation bot verification failed." },
+        { status: 403 }
+      );
+    }
+
     const title = formData.get("title") as string;
     const docketSlug = formData.get("docketSlug") as string;
     const classificationTier = (formData.get("classificationTier") as string) || "RESTRICTED";
