@@ -30,6 +30,9 @@ export async function GET(req: NextRequest) {
     }
 
     const query: any = { isDeleted: false };
+    if (!author) {
+      query.isPrivate = { $ne: true };
+    }
     if (docket && docket !== "all") {
       query.docketSlug = docket;
     }
@@ -119,15 +122,6 @@ export async function GET(req: NextRequest) {
         const scoreB = scoreMap.get(b._id.toString())?.finalScore || 0;
         return scoreB - scoreA;
       });
-
-      for (const c of finalCases as any[]) {
-        const rankInfo = scoreMap.get(c._id.toString());
-        if (rankInfo) {
-          c.aiRank = rankInfo.rank;
-          c.aiScore = Math.round(rankInfo.finalScore * 100);
-          c.aiContributions = rankInfo.featureContributions;
-        }
-      }
     } else if (isOldest) {
       finalCases.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     } else {
@@ -164,6 +158,8 @@ export async function POST(req: NextRequest) {
     const authorCodename = (formData.get("authorCodename") as string) || "Masked Operative";
     const authorEmail = (formData.get("authorEmail") as string) || undefined;
     const isAnonymous = formData.get("isAnonymous") === "true";
+    const isPrivate = formData.get("isPrivate") === "true";
+    const flair = (formData.get("flair") as string) || "Discussion";
     const passkey = formData.get("passkey") as string;
 
     if (!title || !docketSlug || !debriefNarrative) {
@@ -268,6 +264,8 @@ export async function POST(req: NextRequest) {
       reports: [],
       isRedacted: false,
       isDeleted: false,
+      isPrivate,
+      flair,
     });
 
     return NextResponse.json({ success: true, case: newPost }, { status: 201 });

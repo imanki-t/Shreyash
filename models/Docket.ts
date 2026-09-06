@@ -6,6 +6,10 @@ export interface IDocket extends Document {
   slug: string;
   description: string;
   classificationDefault: string;
+  isPrivate?: boolean;
+  bannerUrl?: string;
+  iconUrl?: string;
+  creatorEmail?: string;
 }
 
 const DocketSchema = new Schema<IDocket>(
@@ -15,6 +19,10 @@ const DocketSchema = new Schema<IDocket>(
     slug: { type: String, required: true, unique: true },
     description: { type: String, required: true },
     classificationDefault: { type: String, default: "RESTRICTED" },
+    isPrivate: { type: Boolean, default: false },
+    bannerUrl: { type: String },
+    iconUrl: { type: String },
+    creatorEmail: { type: String },
   },
   { timestamps: true }
 );

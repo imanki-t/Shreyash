@@ -4,7 +4,6 @@ import React from "react";
 import Link from "next/link";
 import {
   MessageSquare,
-  Sparkles,
   Paperclip,
   Flame,
   ArrowUpRight,
@@ -47,8 +46,6 @@ export interface CaseItem {
   };
   isRedacted: boolean;
   createdAt: string;
-  aiRank?: number;
-  aiScore?: number;
 }
 
 interface IncidentsTableProps {
@@ -118,13 +115,6 @@ export default function IncidentsTable({ cases, loading = false }: IncidentsTabl
                 </Link>
                 <span>•</span>
                 <span className="text-[11px]">{formattedDate}</span>
-
-                {c.aiScore !== undefined && (
-                  <span className="ml-1 inline-flex items-center gap-0.5 px-1.5 py-0.2 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-full text-[10px] font-medium border border-blue-200 dark:border-blue-900">
-                    <Sparkles className="w-2.5 h-2.5 text-blue-500" />
-                    {c.aiScore}% Match
-                  </span>
-                )}
               </div>
 
               {/* Title */}

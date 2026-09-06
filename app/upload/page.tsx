@@ -16,8 +16,12 @@ import {
   Music,
   User,
   Shield,
+  Lock,
+  Tag,
 } from "lucide-react";
 import { DEFAULT_DOCKETS, DocketItem } from "@/lib/defaultDockets";
+
+const POST_FLAIRS = ["Discussion", "Meme", "Media", "Question", "OC"];
 
 export default function CreatePostPage() {
   const router = useRouter();
@@ -28,6 +32,8 @@ export default function CreatePostPage() {
   const [targetDocket, setTargetDocket] = useState(DEFAULT_DOCKETS[0].slug);
   const [postTitle, setPostTitle] = useState("");
   const [postContent, setPostContent] = useState("");
+  const [selectedFlair, setSelectedFlair] = useState("Discussion");
+  const [isPrivatePost, setIsPrivatePost] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [username, setUsername] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -39,6 +45,9 @@ export default function CreatePostPage() {
     const savedUsername = localStorage.getItem("covert_codename");
     if (savedUsername) setUsername(savedUsername);
     else if (session?.user?.name) setUsername(session.user.name);
+
+    const defaultPriv = localStorage.getItem("default_post_private") === "true";
+    setIsPrivatePost(defaultPriv);
   }, [session]);
 
   const fetchDockets = async () => {
@@ -81,6 +90,8 @@ export default function CreatePostPage() {
     formData.append("docketSlug", targetDocket);
     formData.append("classificationTier", "COMMUNITY");
     formData.append("debriefNarrative", postContent.trim());
+    formData.append("flair", selectedFlair);
+    formData.append("isPrivate", isPrivatePost ? "true" : "false");
     formData.append("isAnonymous", isAnonymous ? "true" : "false");
     formData.append("authorName", isAnonymous ? "Anonymous User" : (session?.user?.name || username || "Community Member"));
     formData.append("authorCodename", isAnonymous ? "Anonymous" : (username.trim() || session?.user?.name || "User"));
@@ -90,7 +101,7 @@ export default function CreatePostPage() {
     }
 
     selectedFiles.forEach((file) => {
-      formData.append("files", file);
+      formData.append("attachments", file);
     });
 
     try {
@@ -101,7 +112,7 @@ export default function CreatePostPage() {
 
       const data = await res.json();
       if (data.success && data.case) {
-        setStatusMsg({ type: "success", text: "Post created successfully! Redirecting..." });
+        setStatusMsg({ type: "success", text: "Post published successfully! Redirecting..." });
         setTimeout(() => {
           router.push(`/post/${data.case.caseNumber || data.case._id}`);
         }, 1000);
@@ -124,21 +135,39 @@ export default function CreatePostPage() {
       </div>
 
       {/* Community Selector */}
-      <div className="reddit-card p-3">
-        <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">
-          Choose a Community / Sub-group
-        </label>
-        <select
-          value={targetDocket}
-          onChange={(e) => setTargetDocket(e.target.value)}
-          className="w-full sm:w-80 px-3 py-2 text-sm bg-gray-50 dark:bg-[#272729] border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 font-medium focus:outline-hidden focus:border-blue-500"
-        >
-          {dockets.map((d) => (
-            <option key={d.slug} value={d.slug}>
-              c/{d.slug} — {d.name}
-            </option>
-          ))}
-        </select>
+      <div className="reddit-card p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
+            Choose a Community / Sub-group
+          </label>
+          <select
+            value={targetDocket}
+            onChange={(e) => setTargetDocket(e.target.value)}
+            className="w-full sm:w-80 px-3 py-2 text-sm bg-gray-50 dark:bg-[#272729] border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 font-medium focus:outline-hidden focus:border-blue-500"
+          >
+            {dockets.map((d: any) => (
+              <option key={d.slug} value={d.slug}>
+                c/{d.slug} — {d.name} {d.isPrivate ? "(Private)" : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Private Post Option */}
+        <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-[#272729] rounded-lg border border-gray-200 dark:border-gray-700">
+          <label className="flex items-center gap-2 text-xs font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isPrivatePost}
+              onChange={(e) => setIsPrivatePost(e.target.checked)}
+              className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+            />
+            <span className="flex items-center gap-1">
+              <Lock className="w-3.5 h-3.5 text-amber-500" />
+              Private Post
+            </span>
+          </label>
+        </div>
       </div>
 
       {/* Main Post Form */}
@@ -152,12 +181,33 @@ export default function CreatePostPage() {
             placeholder="Title"
             required
             maxLength={300}
-            className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-[#272729] border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-hidden focus:border-blue-500 transition-colors"
+            className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-[#272729] border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-hidden focus:border-blue-500 transition-colors font-medium"
           />
         </div>
 
-        {/* Text Toolbar */}
-        <div className="flex items-center gap-2 pt-1">
+        {/* Flairs & Spoilers Toolbar */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+          {/* Post Flair Pills */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] text-gray-400 font-medium mr-1 flex items-center gap-1">
+              <Tag className="w-3 h-3" /> Flair:
+            </span>
+            {POST_FLAIRS.map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setSelectedFlair(f)}
+                className={`px-2.5 py-0.8 rounded-full text-xs font-medium transition cursor-pointer border ${
+                  selectedFlair === f
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-gray-100 dark:bg-[#272729] text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-blue-500"
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+
           <button
             type="button"
             onClick={handleInsertSpoiler}

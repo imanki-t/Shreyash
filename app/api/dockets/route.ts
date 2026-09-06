@@ -29,10 +29,10 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, description, classificationDefault } = body;
+    const { name, description, classificationDefault, isPrivate, bannerUrl, iconUrl } = body;
 
     if (!name) {
-      return NextResponse.json({ error: "Docket name required." }, { status: 400 });
+      return NextResponse.json({ error: "Community name required." }, { status: 400 });
     }
 
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -45,8 +45,11 @@ export async function POST(req: NextRequest) {
       docketNumber,
       name,
       slug,
-      description: description || "Special intelligence investigation docket.",
-      classificationDefault: classificationDefault || "RESTRICTED",
+      description: description || "Community discussions and media archive.",
+      classificationDefault: classificationDefault || "PUBLIC",
+      isPrivate: Boolean(isPrivate),
+      bannerUrl: bannerUrl || undefined,
+      iconUrl: iconUrl || undefined,
     });
 
     return NextResponse.json({ success: true, docket: newDocket }, { status: 201 });

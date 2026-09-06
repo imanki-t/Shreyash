@@ -64,6 +64,8 @@ export interface IPost extends Document {
   }>;
   isRedacted: boolean;
   isDeleted: boolean;
+  isPrivate?: boolean;
+  flair?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -135,6 +137,8 @@ const PostSchema = new Schema<IPost>(
     ],
     isRedacted: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
+    isPrivate: { type: Boolean, default: false, index: true },
+    flair: { type: String, default: "Discussion" },
   },
   { timestamps: true }
 );

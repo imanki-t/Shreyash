@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import DocketCard from "@/components/DocketCard";
 import DocketSidebar from "@/components/DocketSidebar";
+import RecentPostsWidget from "@/components/RecentPostsWidget";
+import CommunityAboutWidget from "@/components/CommunityAboutWidget";
 import { DEFAULT_DOCKETS, DocketItem } from "@/lib/defaultDockets";
 
 const getCommunityIcon = (slug: string) => {
@@ -43,7 +45,7 @@ export default function CommunityArchivePage() {
   const docketSlug = params?.docket as string;
 
   const [dockets, setDockets] = useState<DocketItem[]>(DEFAULT_DOCKETS);
-  const [currentDocket, setCurrentDocket] = useState<DocketItem | null>(null);
+  const [currentDocket, setCurrentDocket] = useState<any>(null);
   const [cases, setCases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -61,13 +63,13 @@ export default function CommunityArchivePage() {
       const list = docketsData.dockets || DEFAULT_DOCKETS;
       setDockets(list);
 
-      const found = list.find((d: DocketItem) => d.slug === docketSlug);
+      const found = list.find((d: any) => d.slug === docketSlug);
       setCurrentDocket(
         found || {
           docketNumber: "c/" + docketSlug,
           name: docketSlug?.replace(/-/g, " "),
           slug: docketSlug,
-          description: "Community sub-group feed.",
+          description: "Community sub-group feed and discussion archive.",
           classificationDefault: "PUBLIC",
         }
       );
@@ -94,7 +96,7 @@ export default function CommunityArchivePage() {
 
   return (
     <div className="flex flex-col md:flex-row gap-5 items-start font-sans">
-      {/* Sidebar on Left */}
+      {/* Sidebar on Left (Collapsible) */}
       <DocketSidebar
         dockets={dockets}
         currentSlug={docketSlug}
@@ -103,14 +105,30 @@ export default function CommunityArchivePage() {
 
       {/* Main Community Area */}
       <div className="flex-1 w-full space-y-4 min-w-0">
-        {/* Community Header Banner (Reddit Style) */}
+        {/* Community Header Banner (Reddit Style with AI-generated community art) */}
         <div className="reddit-card overflow-hidden">
-          <div className="h-20 sm:h-24 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600" />
-          <div className="p-4 sm:p-5 relative pt-0">
+          <div
+            className="h-24 sm:h-28 bg-cover bg-center"
+            style={{
+              backgroundImage: currentDocket?.bannerUrl
+                ? `url('${currentDocket.bannerUrl}')`
+                : `url('/images/reddit_banner.jpg')`,
+            }}
+          />
+          <div className="p-4 sm:p-5 relative pt-0 bg-white dark:bg-[#1a1a1b]">
             <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 -mt-8 sm:-mt-10">
               <div className="flex items-end gap-3.5">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white dark:bg-[#1a1a1b] border-4 border-white dark:border-[#1a1a1b] shadow-md flex items-center justify-center shrink-0">
-                  {getCommunityIcon(docketSlug)}
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white dark:bg-[#1a1a1b] border-4 border-white dark:border-[#1a1a1b] shadow-md flex items-center justify-center shrink-0 overflow-hidden">
+                  {currentDocket?.iconUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={currentDocket.iconUrl}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    getCommunityIcon(docketSlug)
+                  )}
                 </div>
                 <div className="pb-1">
                   <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white capitalize">
@@ -123,8 +141,8 @@ export default function CommunityArchivePage() {
               </div>
 
               <Link
-                href="/upload"
-                className="btn-primary text-xs py-2 px-4 shrink-0"
+                href={`/upload?docket=${docketSlug}`}
+                className="btn-primary text-xs py-2 px-4 shrink-0 flex items-center gap-1.5"
               >
                 <Plus className="w-4 h-4" />
                 <span>Create Post</span>
@@ -202,7 +220,7 @@ export default function CommunityArchivePage() {
             <p className="text-xs text-gray-500 max-w-sm mx-auto">
               Be the first to share an incident, memory, or screenshot in this community!
             </p>
-            <Link href="/upload" className="btn-primary text-xs inline-flex items-center gap-1.5">
+            <Link href={`/upload?docket=${docketSlug}`} className="btn-primary text-xs inline-flex items-center gap-1.5">
               <Plus className="w-4 h-4" />
               <span>Create Post</span>
             </Link>
@@ -214,6 +232,16 @@ export default function CommunityArchivePage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Right Sidebar: Recent Posts & Community About Widget */}
+      <div className="hidden lg:block w-76 shrink-0 space-y-4">
+        <RecentPostsWidget />
+        <CommunityAboutWidget
+          communityName={currentDocket?.name}
+          slug={docketSlug}
+          description={currentDocket?.description}
+        />
       </div>
     </div>
   );

@@ -115,6 +115,18 @@ export default function OperativeModal({ isOpen, onClose }: OperativeModalProps)
                   <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
                 </Link>
 
+                <Link
+                  href="/settings"
+                  onClick={onClose}
+                  className="flex items-center justify-between p-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272729] text-gray-800 dark:text-gray-200 font-semibold transition"
+                >
+                  <span className="flex items-center gap-2">
+                    <Settings className="w-3.5 h-3.5 text-gray-500" />
+                    Settings & Danger Zone
+                  </span>
+                  <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
+                </Link>
+
                 {isMasterAdmin && (
                   <Link
                     href="/admin"
