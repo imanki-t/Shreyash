@@ -4,42 +4,45 @@ export interface DocketItem {
   slug: string;
   description: string;
   classificationDefault: string;
+  isPrivate?: boolean;
+  bannerUrl?: string;
+  iconUrl?: string;
 }
 
 export const DEFAULT_DOCKETS: DocketItem[] = [
   {
-    docketNumber: "Docket 01",
-    name: "Digital Simulation Engagements",
-    slug: "simulation-operations",
-    description: "Official repository of all multiplayer engagements, structural builds, tactical miscalculations, and in-game incidents involving Subject Shreyash across various titles.",
-    classificationDefault: "RESTRICTED",
+    docketNumber: "c/general",
+    name: "General",
+    slug: "general",
+    description: "The central lounge for discussions, stories, thoughts, and community updates.",
+    classificationDefault: "PUBLIC",
   },
   {
-    docketNumber: "Docket 02",
-    name: "Verbal Disclosures & Audio Intercepts",
-    slug: "verbal-intercepts",
-    description: "Documented audio surveillance intercepts, voice channel recordings, and verbatim out-of-context transcripts captured during operational sessions.",
-    classificationDefault: "CONFIDENTIAL",
+    docketNumber: "c/memes",
+    name: "Memes",
+    slug: "memes",
+    description: "Top tier memes, shitposts, comedy clips, and hilarious reactions.",
+    classificationDefault: "PUBLIC",
   },
   {
-    docketNumber: "Docket 03",
-    name: "Visual & Photographic Surveillance",
-    slug: "photographic-evidence",
-    description: "Photographic exhibits, screengrabs, facial surveillance captures, and visual artifacts cataloged under chain-of-custody protocols.",
-    classificationDefault: "RESTRICTED",
+    docketNumber: "c/tech",
+    name: "Tech & Gaming",
+    slug: "tech",
+    description: "Hardware setups, coding projects, gaming clutches, and tech discussions.",
+    classificationDefault: "PUBLIC",
   },
   {
-    docketNumber: "Docket 04",
-    name: "Behavioral Anomalies & Peculiarities",
-    slug: "behavioral-anomalies",
-    description: "Incidents exhibiting significant variance from rational baseline behavior, unexplained late-night occurrences, and peculiar tactical habits.",
-    classificationDefault: "SPECIAL OVERSIGHT",
+    docketNumber: "c/ask",
+    name: "Ask Community",
+    slug: "ask",
+    description: "Open questions, AMA discussions, life advice, and opinions.",
+    classificationDefault: "PUBLIC",
   },
   {
-    docketNumber: "Docket 05",
-    name: "Commendations & Wholesome Records",
-    slug: "commendations",
-    description: "Declassified evidence of exemplary loyalty, emotional camaraderie, heroic clutches, and genuine friendship within the Directorate.",
-    classificationDefault: "DECLASSIFIED // WHOLESOME",
+    docketNumber: "c/music",
+    name: "Music & Media",
+    slug: "music",
+    description: "Favorite playlists, tracks, audio snippets, and video creations.",
+    classificationDefault: "PUBLIC",
   },
 ];

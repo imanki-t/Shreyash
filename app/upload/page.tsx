@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react";
 import {
   Upload,
   Image as ImageIcon,
@@ -134,10 +134,33 @@ export default function CreatePostPage() {
         </h1>
       </div>
 
-      {/* Community Selector */}
-      <div className="reddit-card p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div>
-          <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
+      {!session?.user ? (
+        <div className="reddit-card p-8 sm:p-12 text-center space-y-4">
+          <div className="w-16 h-16 mx-auto rounded-full bg-orange-100 dark:bg-orange-950/60 text-[#ff4500] flex items-center justify-center">
+            <Upload className="w-8 h-8" />
+          </div>
+          <div className="max-w-md mx-auto space-y-1.5">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+              Sign in to Create a Post
+            </h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+              Guests can view public posts and communities. To start discussions, upload photos, audio, or submit files, please sign in with Google.
+            </p>
+          </div>
+          <button
+            onClick={() => signIn("google")}
+            className="inline-flex items-center gap-2.5 py-2.5 px-6 bg-[#ff4500] hover:bg-[#e03d00] text-white font-bold text-xs rounded-full shadow-md transition cursor-pointer"
+          >
+            <User className="w-4 h-4" />
+            <span>Sign In with Google</span>
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* Community Selector */}
+          <div className="reddit-card p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
             Choose a Community / Sub-group
           </label>
           <select
@@ -333,6 +356,8 @@ export default function CreatePostPage() {
           </div>
         )}
       </form>
+      </>
+      )}
     </div>
   );
 }

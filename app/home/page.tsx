@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import DocketSidebar from "@/components/DocketSidebar";
 import DocketCard from "@/components/DocketCard";
-import SubjectBriefingCard from "@/components/SubjectBriefingCard";
 import RecentPostsWidget from "@/components/RecentPostsWidget";
 import CommunityAboutWidget from "@/components/CommunityAboutWidget";
 import { DEFAULT_DOCKETS, DocketItem } from "@/lib/defaultDockets";
@@ -152,7 +151,7 @@ export default function HomePage() {
                 }`}
               >
                 <Flame className="w-4 h-4 text-orange-500" />
-                <span>Hot</span>
+                <span>Trending</span>
               </button>
 
               <button
@@ -273,9 +272,6 @@ export default function HomePage() {
 
           {/* Community Info & Rules Widget */}
           <CommunityAboutWidget />
-
-          {/* About Shreyash Subject Profile Briefing */}
-          <SubjectBriefingCard identity={identity} />
         </div>
       </div>
 

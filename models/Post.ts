@@ -66,6 +66,7 @@ export interface IPost extends Document {
   isDeleted: boolean;
   isPrivate?: boolean;
   flair?: string;
+  userVotes?: Array<{ userId: string; vote: number }>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -139,6 +140,12 @@ const PostSchema = new Schema<IPost>(
     isDeleted: { type: Boolean, default: false },
     isPrivate: { type: Boolean, default: false, index: true },
     flair: { type: String, default: "Discussion" },
+    userVotes: [
+      {
+        userId: { type: String, required: true },
+        vote: { type: Number, required: true, enum: [1, -1] },
+      },
+    ],
   },
   { timestamps: true }
 );

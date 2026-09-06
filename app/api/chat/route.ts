@@ -54,22 +54,17 @@ export async function POST(req: NextRequest) {
     }
 
     const session = await getServerSession(authOptions);
-
-    let senderName = "Operative";
-    let senderEmail = "";
-    let senderCodename = "User";
-    let senderImage = "";
-
-    if (session?.user) {
-      senderName = session.user.name || "Operative";
-      senderEmail = session.user.email || "";
-      senderImage = session.user.image || "";
-      senderCodename = (session.user as any).codename || senderName.replace(/\s+/g, "_");
-    } else if (body.sender) {
-      senderName = body.sender.name || "Guest";
-      senderCodename = body.sender.codename || "Guest";
-      senderImage = body.sender.image || "";
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Guests cannot send chat messages. Please sign in to participate." },
+        { status: 401 }
+      );
     }
+
+    const senderName = session.user.name || "User";
+    const senderEmail = session.user.email || "";
+    const senderImage = session.user.image || "";
+    const senderCodename = (session.user as any).codename || senderName.replace(/\s+/g, "_");
 
     const newMsg = await ChatMessage.create({
       sender: {

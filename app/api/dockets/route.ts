@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Docket } from "@/models/Docket";
 import { DEFAULT_DOCKETS } from "@/lib/defaultDockets";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function GET() {
   try {
@@ -28,6 +30,14 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Guests cannot create communities. Please sign in to participate." },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const { name, description, classificationDefault, isPrivate, bannerUrl, iconUrl } = body;
 

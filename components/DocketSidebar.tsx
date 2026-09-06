@@ -20,6 +20,9 @@ import {
   ChevronUp,
   Flame,
   Globe,
+  Smile,
+  HelpCircle,
+  Music,
 } from "lucide-react";
 import { DEFAULT_DOCKETS, DocketItem } from "@/lib/defaultDockets";
 
@@ -30,19 +33,19 @@ export interface DocketSidebarProps {
 }
 
 const getCommunityIcon = (slug: string) => {
-  if (slug.includes("simulation") || slug.includes("gaming")) {
+  if (slug.includes("meme") || slug.includes("funny")) {
+    return <Smile className="w-4 h-4 text-amber-500" />;
+  }
+  if (slug.includes("tech") || slug.includes("gaming") || slug.includes("code")) {
     return <Gamepad2 className="w-4 h-4 text-purple-500" />;
   }
-  if (slug.includes("verbal") || slug.includes("audio")) {
-    return <Mic className="w-4 h-4 text-amber-500" />;
+  if (slug.includes("ask") || slug.includes("question")) {
+    return <HelpCircle className="w-4 h-4 text-emerald-500" />;
   }
-  if (slug.includes("photo") || slug.includes("visual")) {
-    return <Camera className="w-4 h-4 text-rose-500" />;
+  if (slug.includes("music") || slug.includes("audio") || slug.includes("voice")) {
+    return <Music className="w-4 h-4 text-rose-500" />;
   }
-  if (slug.includes("commend")) {
-    return <Award className="w-4 h-4 text-yellow-500" />;
-  }
-  return <Layers className="w-4 h-4 text-blue-500" />;
+  return <Compass className="w-4 h-4 text-blue-500" />;
 };
 
 export default function DocketSidebar({

@@ -4,65 +4,85 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import {
-  Send,
-  User,
   MessageSquare,
-  Clock,
   ArrowBigUp,
   ArrowBigDown,
   Reply,
-  Share2,
-  Check,
+  MinusCircle,
+  PlusCircle,
+  Search,
+  Flame,
+  ChevronDown,
+  User,
+  LogIn,
 } from "lucide-react";
 import RedactedText from "./RedactedText";
 
 interface CommentItem {
   _id: string;
+  caseId: string;
+  parentId?: string;
   authorName: string;
   authorCodename: string;
-  isAnonymous: boolean;
+  authorEmail?: string;
   content: string;
+  score: number;
+  userVotes?: Array<{ userId: string; vote: number }>;
   createdAt: string;
-  votes?: number;
 }
 
-interface InvestigatorFieldLogProps {
+interface CommentsProps {
   caseId: string;
 }
 
-export default function InvestigatorFieldLog({ caseId }: InvestigatorFieldLogProps) {
+export default function InvestigatorFieldLog({ caseId }: CommentsProps) {
   const { data: session } = useSession();
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [newContent, setNewContent] = useState("");
-  const [authorCodename, setAuthorCodename] = useState("");
-  const [isAnonymous, setIsAnonymous] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [commentSearch, setCommentSearch] = useState("");
+  const [sortOrder, setSortOrder] = useState<"trending" | "new">("trending");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
-  const [commentVotes, setCommentVotes] = useState<Record<string, number>>({});
+  const [collapsedThreads, setCollapsedThreads] = useState<Record<string, boolean>>({});
+  const [userVotes, setUserVotes] = useState<Record<string, 1 | -1 | 0>>({});
+  const [showSignInModal, setShowSignInModal] = useState(false);
 
   useEffect(() => {
-    const savedCodename = localStorage.getItem("covert_codename");
-    if (savedCodename) setAuthorCodename(savedCodename);
-    else if (session?.user?.name) setAuthorCodename(session.user.name);
-    else setAuthorCodename("User");
-
     fetchComments();
-  }, [caseId, session]);
+  }, [caseId]);
 
   const fetchComments = async () => {
     try {
       const res = await fetch(`/api/comments?caseId=${caseId}`);
       const data = await res.json();
-      if (data.comments) setComments(data.comments);
+      if (data.comments) {
+        setComments(data.comments);
+        // Map user votes
+        if (session?.user) {
+          const myId = session.user.email || (session.user as any).codename;
+          const votesMap: Record<string, 1 | -1 | 0> = {};
+          data.comments.forEach((c: any) => {
+            const found = c.userVotes?.find((v: any) => v.userId === myId);
+            if (found) votesMap[c._id] = found.vote;
+          });
+          setUserVotes(votesMap);
+        }
+      }
     } catch (err) {
       console.error(err);
     }
   };
 
-  const handlePostComment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newContent.trim()) return;
+  const handlePostComment = async (e?: React.FormEvent, parentId?: string) => {
+    if (e) e.preventDefault();
+    if (!session?.user) {
+      setShowSignInModal(true);
+      return;
+    }
+
+    const textToPost = parentId ? replyText.trim() : newContent.trim();
+    if (!textToPost) return;
 
     setLoading(true);
     try {
@@ -71,18 +91,20 @@ export default function InvestigatorFieldLog({ caseId }: InvestigatorFieldLogPro
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           caseId,
-          authorName: session?.user?.name || authorCodename || "User",
-          authorCodename: isAnonymous ? "Anonymous" : (authorCodename || "User"),
-          authorEmail: session?.user?.email,
-          isAnonymous,
-          content: newContent.trim(),
+          parentId,
+          content: textToPost,
         }),
       });
 
       const data = await res.json();
       if (data.success && data.comment) {
-        setComments([...comments, data.comment]);
-        setNewContent("");
+        setComments((prev) => [...prev, data.comment]);
+        if (parentId) {
+          setReplyText("");
+          setReplyingTo(null);
+        } else {
+          setNewContent("");
+        }
       }
     } catch (err) {
       console.error(err);
@@ -91,213 +113,331 @@ export default function InvestigatorFieldLog({ caseId }: InvestigatorFieldLogPro
     }
   };
 
-  const handleReplySubmit = async (targetAuthor: string, e: React.FormEvent) => {
-    e.preventDefault();
-    if (!replyText.trim()) return;
+  const handleCommentVote = async (commentId: string, delta: 1 | -1) => {
+    if (!session?.user) {
+      setShowSignInModal(true);
+      return;
+    }
 
-    const fullContent = `@${targetAuthor} ${replyText.trim()}`;
-    setLoading(true);
     try {
       const res = await fetch("/api/comments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           caseId,
-          authorName: session?.user?.name || authorCodename || "User",
-          authorCodename: isAnonymous ? "Anonymous" : (authorCodename || "User"),
-          authorEmail: session?.user?.email,
-          isAnonymous,
-          content: fullContent,
+          commentId,
+          action: "vote",
+          delta,
         }),
       });
-
       const data = await res.json();
-      if (data.success && data.comment) {
-        setComments([...comments, data.comment]);
-        setReplyText("");
-        setReplyingTo(null);
+      if (data.success) {
+        setUserVotes((prev) => ({ ...prev, [commentId]: data.userVote }));
+        setComments((prev) =>
+          prev.map((c) => (c._id === commentId ? { ...c, score: data.score } : c))
+        );
       }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    } catch {}
   };
 
-  const handleCommentVote = (commentId: string, delta: number) => {
-    setCommentVotes((prev) => {
-      const current = prev[commentId] || 0;
-      return { ...prev, [commentId]: current + delta };
-    });
+  const toggleCollapse = (id: string) => {
+    setCollapsedThreads((prev) => ({ ...prev, [id]: !prev[id] }));
   };
+
+  // Build tree
+  const rootComments = comments.filter((c) => !c.parentId);
+  const getReplies = (parentId: string) => comments.filter((c) => c.parentId === parentId);
+
+  const filteredRoots = rootComments.filter((c) => {
+    if (!commentSearch) return true;
+    return (
+      c.content.toLowerCase().includes(commentSearch.toLowerCase()) ||
+      c.authorCodename.toLowerCase().includes(commentSearch.toLowerCase())
+    );
+  });
 
   return (
     <div className="reddit-card overflow-hidden font-sans space-y-0">
-      {/* Header */}
-      <div className="px-5 py-3.5 border-b border-gray-200 dark:border-[#343536] flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-blue-500" />
-          <h3 className="font-bold text-sm text-gray-900 dark:text-gray-100">
-            Comments & Discussion ({comments.length})
-          </h3>
+      {/* Header & Search Bar (Screenshot 2) */}
+      <div className="p-4 border-b border-gray-200 dark:border-[#343536] space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="w-4 h-4 text-blue-500" />
+            <h3 className="font-bold text-sm text-gray-900 dark:text-white">
+              Comments ({comments.length})
+            </h3>
+          </div>
+
+          {/* Sort Dropdown */}
+          <div className="flex items-center gap-1.5 text-xs">
+            <span className="text-gray-500">Sort by:</span>
+            <button
+              onClick={() => setSortOrder(sortOrder === "trending" ? "new" : "trending")}
+              className="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1 hover:text-blue-600 cursor-pointer"
+            >
+              <span>{sortOrder === "trending" ? "Trending" : "New"}</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Search Comments Pill */}
+        <div className="relative">
+          <input
+            type="text"
+            value={commentSearch}
+            onChange={(e) => setCommentSearch(e.target.value)}
+            placeholder="Search Comments"
+            className="w-full bg-gray-100 dark:bg-[#272729] rounded-full pl-9 pr-4 py-1.5 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-hidden focus:border-blue-500 border border-transparent"
+          />
+          <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-2.5" />
         </div>
       </div>
 
-      {/* Intake Comment Form */}
-      <div className="p-4 sm:p-5 bg-gray-50/50 dark:bg-[#161a1d] border-b border-gray-200 dark:border-[#343536]">
-        <form onSubmit={handlePostComment} className="space-y-3">
-          <textarea
-            rows={3}
-            value={newContent}
-            onChange={(e) => setNewContent(e.target.value)}
-            placeholder="What are your thoughts?"
-            className="w-full p-3 bg-white dark:bg-[#272729] border border-gray-300 dark:border-gray-700 rounded-xl text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-hidden focus:border-blue-500 transition-colors leading-relaxed"
-          />
+      {/* "Join the conversation" Input Area (Screenshot 2) */}
+      <div className="p-4 bg-gray-50/70 dark:bg-[#161a1d] border-b border-gray-200 dark:border-[#343536]">
+        {session?.user ? (
+          <form onSubmit={(e) => handlePostComment(e)} className="space-y-2.5">
+            <textarea
+              rows={2}
+              value={newContent}
+              onChange={(e) => setNewContent(e.target.value)}
+              placeholder="Join the conversation..."
+              className="w-full p-3 bg-white dark:bg-[#272729] border border-gray-300 dark:border-gray-700 rounded-xl text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-hidden focus:border-blue-500 transition-colors leading-relaxed"
+            />
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={loading || !newContent.trim()}
+                className="btn-primary text-xs py-1.5 px-4 disabled:opacity-50 cursor-pointer"
+              >
+                {loading ? "Posting..." : "Comment"}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="p-4 border border-dashed border-gray-300 dark:border-gray-700 rounded-xl text-center space-y-2 bg-white dark:bg-[#1a1a1b]">
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              Guests can only view content. Log in or sign up to leave a comment.
+            </p>
+            <Link
+              href="/identity"
+              className="btn-primary inline-flex items-center gap-1.5 text-xs py-1.5 px-4"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Sign In with Google</span>
+            </Link>
+          </div>
+        )}
+      </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-            <div className="flex items-center gap-3">
-              <label className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isAnonymous}
-                  onChange={(e) => setIsAnonymous(e.target.checked)}
-                  className="rounded-sm text-blue-600 focus:ring-blue-500"
-                />
-                <span>Comment Anonymously</span>
-              </label>
+      {/* Guest Sign In Modal Alert */}
+      {showSignInModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="bg-white dark:bg-[#1a1a1b] p-6 rounded-2xl border border-gray-200 dark:border-[#343536] max-w-sm w-full space-y-4 text-center shadow-2xl">
+            <User className="w-10 h-10 text-blue-500 mx-auto" />
+            <div>
+              <h3 className="font-bold text-sm text-gray-900 dark:text-white">
+                Sign in to participate
+              </h3>
+              <p className="text-xs text-gray-500 mt-1">
+                Guests can view all posts and discussions. To vote or comment, please sign in.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Link href="/identity" className="btn-primary py-2 text-xs text-center">
+                Sign In with Google
+              </Link>
+              <button
+                onClick={() => setShowSignInModal(false)}
+                className="btn-secondary py-1.5 text-xs cursor-pointer"
+              >
+                Continue Browsing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-              {!isAnonymous && (
-                <input
-                  type="text"
-                  value={authorCodename}
-                  onChange={(e) => setAuthorCodename(e.target.value)}
-                  placeholder="Your Name"
-                  className="px-2.5 py-1 text-xs bg-white dark:bg-[#272729] border border-gray-300 dark:border-gray-700 rounded-md text-gray-900 dark:text-gray-100"
-                />
-              )}
+      {/* Threaded Comments Tree (Screenshot 4) */}
+      <div className="p-4 sm:p-5 space-y-4">
+        {filteredRoots.length === 0 ? (
+          <div className="py-8 text-center text-xs text-gray-400">
+            No comments yet. Be the first to join the conversation!
+          </div>
+        ) : (
+          filteredRoots.map((comment) => (
+            <CommentThreadNode
+              key={comment._id}
+              comment={comment}
+              getReplies={getReplies}
+              isCollapsed={Boolean(collapsedThreads[comment._id])}
+              onToggleCollapse={() => toggleCollapse(comment._id)}
+              replyingTo={replyingTo}
+              setReplyingTo={setReplyingTo}
+              replyText={replyText}
+              setReplyText={setReplyText}
+              onReplySubmit={(parentId: string) => handlePostComment(undefined, parentId)}
+              onVote={handleCommentVote}
+              userVote={userVotes[comment._id] || 0}
+              userVotes={userVotes}
+              loading={loading}
+              session={session}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Recursive Comment Thread Node with vertical nesting guide lines
+function CommentThreadNode({
+  comment,
+  getReplies,
+  isCollapsed,
+  onToggleCollapse,
+  replyingTo,
+  setReplyingTo,
+  replyText,
+  setReplyText,
+  onReplySubmit,
+  onVote,
+  userVote,
+  userVotes,
+  loading,
+  session,
+}: any) {
+  const replies = getReplies(comment._id);
+  const timeFormatted = new Date(comment.createdAt).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+
+  return (
+    <div className="space-y-2 text-xs">
+      {/* Comment Header */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onToggleCollapse}
+          className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer"
+          title={isCollapsed ? "Expand thread" : "Collapse thread"}
+        >
+          {isCollapsed ? (
+            <PlusCircle className="w-3.5 h-3.5" />
+          ) : (
+            <MinusCircle className="w-3.5 h-3.5" />
+          )}
+        </button>
+
+        <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 font-bold text-[9px]">
+          {comment.authorCodename.substring(0, 1).toUpperCase()}
+        </div>
+
+        <Link
+          href={`/profile/${encodeURIComponent(comment.authorCodename)}`}
+          className="font-bold text-gray-900 dark:text-gray-100 hover:underline hover:text-blue-500"
+        >
+          u/{comment.authorCodename}
+        </Link>
+
+        <span className="text-gray-400">•</span>
+        <span className="text-gray-400 text-[11px]">{timeFormatted}</span>
+      </div>
+
+      {!isCollapsed && (
+        <div className="pl-6 space-y-2">
+          {/* Comment Body */}
+          <div className="text-xs sm:text-sm text-gray-800 dark:text-gray-200 leading-relaxed">
+            <RedactedText content={comment.content} />
+          </div>
+
+          {/* Action bar: Vote pill ( ↑ score ↓ ) + Reply */}
+          <div className="flex items-center gap-3 text-gray-500 text-xs">
+            {/* Vote pill */}
+            <div className="flex items-center gap-1 bg-gray-100 dark:bg-[#272729] px-2 py-0.5 rounded-full">
+              <button
+                onClick={() => onVote(comment._id, 1)}
+                className={`p-0.5 hover:text-orange-500 cursor-pointer ${userVote === 1 ? "text-orange-500" : ""}`}
+              >
+                <ArrowBigUp className={`w-3.5 h-3.5 ${userVote === 1 ? "fill-current" : ""}`} />
+              </button>
+              <span className={`text-[11px] font-bold min-w-4 text-center ${userVote === 1 ? "text-orange-500" : userVote === -1 ? "text-blue-500" : ""}`}>
+                {comment.score || 1}
+              </span>
+              <button
+                onClick={() => onVote(comment._id, -1)}
+                className={`p-0.5 hover:text-blue-500 cursor-pointer ${userVote === -1 ? "text-blue-500" : ""}`}
+              >
+                <ArrowBigDown className={`w-3.5 h-3.5 ${userVote === -1 ? "fill-current" : ""}`} />
+              </button>
             </div>
 
             <button
-              type="submit"
-              disabled={loading || !newContent.trim()}
-              className="btn-primary text-xs py-1.5 px-4 disabled:opacity-50 cursor-pointer"
+              onClick={() => setReplyingTo(replyingTo === comment._id ? null : comment._id)}
+              className="flex items-center gap-1 hover:text-gray-800 dark:hover:text-gray-200 font-semibold cursor-pointer"
             >
-              {loading ? "Posting..." : "Comment"}
+              <Reply className="w-3.5 h-3.5" />
+              <span>Reply</span>
             </button>
           </div>
-        </form>
-      </div>
 
-      {/* Comment List */}
-      <div className="p-4 sm:p-5 space-y-4 divide-y divide-gray-100 dark:divide-[#272729]">
-        {comments.length === 0 ? (
-          <div className="py-8 text-center text-xs text-gray-400">
-            No comments yet. Be the first to start the discussion!
-          </div>
-        ) : (
-          comments.map((entry) => {
-            const timeFormatted = new Date(entry.createdAt).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            });
-            const voteScore = (commentVotes[entry._id] || 0) + 1;
-            const isReplying = replyingTo === entry._id;
-
-            return (
-              <div key={entry._id} className="pt-3.5 first:pt-0 space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 font-bold text-[10px]">
-                      {entry.authorCodename.substring(0, 1).toUpperCase()}
-                    </div>
-                    {entry.isAnonymous ? (
-                      <span className="font-semibold text-gray-500">Anonymous</span>
-                    ) : (
-                      <Link
-                        href={`/profile/${encodeURIComponent(entry.authorCodename || "User")}`}
-                        className="font-semibold text-gray-900 dark:text-gray-100 hover:underline hover:text-blue-500 transition-colors"
-                      >
-                        u/{entry.authorCodename}
-                      </Link>
-                    )}
-                  </div>
-                  <span className="text-[11px] text-gray-400">{timeFormatted}</span>
-                </div>
-
-                <div className="text-xs sm:text-sm text-gray-700 dark:text-gray-200 leading-relaxed pl-8">
-                  <RedactedText text={entry.content} />
-                </div>
-
-                {/* Comment Action Bar: Voting & Reply */}
-                <div className="pl-8 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 font-medium">
-                  {/* Vote Pill */}
-                  <div className="flex items-center gap-1 bg-gray-100 dark:bg-[#272729] px-2 py-0.5 rounded-full">
-                    <button
-                      onClick={() => handleCommentVote(entry._id, 1)}
-                      className="p-0.5 hover:text-orange-500 cursor-pointer"
-                      title="Upvote"
-                    >
-                      <ArrowBigUp className="w-3.5 h-3.5" />
-                    </button>
-                    <span className="text-[11px] font-bold min-w-4 text-center">
-                      {voteScore}
-                    </span>
-                    <button
-                      onClick={() => handleCommentVote(entry._id, -1)}
-                      className="p-0.5 hover:text-blue-500 cursor-pointer"
-                      title="Downvote"
-                    >
-                      <ArrowBigDown className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  <button
-                    onClick={() => setReplyingTo(isReplying ? null : entry._id)}
-                    className="flex items-center gap-1 hover:text-gray-800 dark:hover:text-gray-200 cursor-pointer text-xs"
-                  >
-                    <Reply className="w-3.5 h-3.5" />
-                    <span>Reply</span>
-                  </button>
-                </div>
-
-                {/* Inline Reply Form */}
-                {isReplying && (
-                  <form
-                    onSubmit={(e) => handleReplySubmit(entry.authorCodename, e)}
-                    className="pl-8 pt-2 space-y-2"
-                  >
-                    <textarea
-                      rows={2}
-                      value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
-                      placeholder={`Replying to u/${entry.authorCodename}...`}
-                      className="w-full p-2.5 bg-white dark:bg-[#272729] border border-gray-300 dark:border-gray-700 rounded-lg text-xs text-gray-900 dark:text-white focus:outline-hidden focus:border-blue-500"
-                    />
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setReplyingTo(null)}
-                        className="px-3 py-1 rounded-full border border-gray-300 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-300 cursor-pointer"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={loading || !replyText.trim()}
-                        className="btn-primary py-1 px-3 text-xs cursor-pointer disabled:opacity-50"
-                      >
-                        Reply
-                      </button>
-                    </div>
-                  </form>
-                )}
+          {/* Inline Reply Input */}
+          {replyingTo === comment._id && (
+            <div className="pt-2 space-y-2">
+              <textarea
+                rows={2}
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                placeholder={`Replying to u/${comment.authorCodename}...`}
+                className="w-full p-2 bg-gray-50 dark:bg-[#272729] border border-gray-300 dark:border-gray-700 rounded-lg text-xs text-gray-900 dark:text-white focus:outline-hidden focus:border-blue-500"
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setReplyingTo(null)}
+                  className="px-3 py-1 border border-gray-300 dark:border-gray-700 rounded-full text-xs text-gray-600 dark:text-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onReplySubmit(comment._id)}
+                  disabled={loading || !replyText.trim()}
+                  className="btn-primary py-1 px-3 text-xs"
+                >
+                  Reply
+                </button>
               </div>
-            );
-          })
-        )}
-      </div>
+            </div>
+          )}
+
+          {/* Nested Replies with Continuous Left Vertical Connector Line */}
+          {replies.length > 0 && (
+            <div className="border-l-2 border-gray-200 dark:border-[#343536] pl-3 sm:pl-4 space-y-3 mt-3">
+              {replies.map((child: any) => (
+                <CommentThreadNode
+                  key={child._id}
+                  comment={child}
+                  getReplies={getReplies}
+                  isCollapsed={false}
+                  onToggleCollapse={() => {}}
+                  replyingTo={replyingTo}
+                  setReplyingTo={setReplyingTo}
+                  replyText={replyText}
+                  setReplyText={setReplyText}
+                  onReplySubmit={onReplySubmit}
+                  onVote={onVote}
+                  userVote={userVotes[child._id] || 0}
+                  userVotes={userVotes}
+                  loading={loading}
+                  session={session}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

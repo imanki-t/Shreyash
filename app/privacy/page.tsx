@@ -1,175 +1,146 @@
 import React from "react";
 import Link from "next/link";
-import { Shield, ArrowLeft, Lock, FileText, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Lock, EyeOff, Database, CheckCircle2, UserCheck } from "lucide-react";
 
 export const metadata = {
-  title: "Privacy Policy | Shreyash Files",
-  description: "Official Privacy Policy and Data Handling Directive for The Shreyash Files digital repository.",
+  title: "Privacy Policy | The Shreyash Files",
+  description: "Privacy Policy and Data Protection standards for The Shreyash Files.",
 };
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="max-w-4xl mx-auto space-y-6 font-sans">
-      {/* Back to Archive Header */}
+    <div className="max-w-4xl mx-auto space-y-6 font-sans py-4">
+      {/* Back to Feed Header */}
       <div className="flex items-center justify-between">
         <Link
           href="/home"
-          className="inline-flex items-center gap-1.5 text-xs font-mono text-[#071931] dark:text-[#d8c396] hover:underline"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:text-[#ff4500] dark:hover:text-[#ff4500] transition"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>RETURN TO CENTRAL REPOSITORY</span>
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to Feed</span>
         </Link>
-        <span className="font-mono text-[11px] text-slate-500">
-          DOC REF: DIR-PRIV-2026-A
+        <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+          Last updated: September 2026
         </span>
       </div>
 
-      {/* Main Dossier Container */}
-      <div className="bg-white dark:bg-[#111822] border-2 border-[#b8b3a5] dark:border-[#273549] shadow-md rounded-xs overflow-hidden">
-        {/* Top Federal Ribbon */}
-        <div className="bg-[#071931] text-white px-5 py-4 border-b-2 border-[#c5a059] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-[#0d274d] border border-[#c5a059] flex items-center justify-center">
-              <Shield className="w-5 h-5 text-[#c5a059]" />
+      {/* Main Reddit Privacy Card */}
+      <div className="bg-white dark:bg-[#1a1a1b] border border-gray-200 dark:border-[#343536] shadow-sm rounded-2xl overflow-hidden">
+        {/* Banner Header */}
+        <div className="p-6 sm:p-8 border-b border-gray-200 dark:border-[#343536] bg-gradient-to-r from-blue-500/10 via-emerald-500/5 to-transparent">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md">
+              <Lock className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="font-serif font-bold text-base uppercase tracking-wider text-[#d8c396]">
-                PUBLIC PRIVACY POLICY & DATA HANDLING DIRECTIVE
+              <h1 className="font-extrabold text-2xl text-gray-900 dark:text-white tracking-tight">
+                The Shreyash Files Privacy Policy
               </h1>
-              <p className="font-mono text-[10px] text-slate-400">
-                THE SHREYASH FILES CENTRAL ARCHIVE // JURISDICTION: DIGITAL REPOSITORY
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                We believe privacy is a fundamental right. Learn how we handle and protect your information.
               </p>
             </div>
-          </div>
-          <div className="text-right font-mono text-[10px] text-slate-400">
-            <div>EFFECTIVE DATE: SEPTEMBER 2026</div>
-            <div className="text-emerald-400 font-semibold">STATUS: RATIFIED & ACTIVE</div>
           </div>
         </div>
 
         {/* Content Body */}
-        <div className="p-6 sm:p-8 space-y-6 text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans">
+        <div className="p-6 sm:p-8 space-y-8 text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
           {/* Section 1 */}
-          <section className="space-y-2">
-            <h2 className="font-serif font-bold text-sm text-[#071931] dark:text-white uppercase tracking-wide flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-              <span className="font-mono text-xs text-[#c5a059]">01.</span>
-              Scope & Purpose of the Archive
-            </h2>
+          <section className="space-y-3">
+            <div className="flex items-center gap-2.5 text-base font-bold text-gray-900 dark:text-white">
+              <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-bold">
+                1
+              </div>
+              <h2>Information We Collect</h2>
+            </div>
             <p>
-              The Shreyash Files (<code className="font-mono text-[#071931] dark:text-[#d8c396]">https://departmentofjustice.onrender.com/</code>) 
-              operates as a private, collaborative memory archival database and lighthearted digital surveillance exhibit 
-              documenting shared milestones, gaming logs, voice intercepts, and multimedia exhibits among friends and approved operatives. 
-              We take the privacy and confidentiality of visitors, operatives, and subjects seriously. This Privacy Policy details the strict protocols 
-              governing data collection, user authentication, and data retention.
+              We prioritize data minimization. We only collect the minimal information necessary to provide an authentic, fast, and community-driven experience:
             </p>
+            <div className="grid sm:grid-cols-2 gap-3 text-xs pt-1">
+              <div className="p-3.5 bg-gray-50 dark:bg-[#272729] rounded-xl border border-gray-200 dark:border-[#343536] space-y-1">
+                <div className="font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
+                  <UserCheck className="w-4 h-4 text-blue-500" />
+                  Account Profile
+                </div>
+                <p className="text-gray-600 dark:text-gray-400">
+                  When you authenticate via Google OAuth, we receive your name, email address, and avatar image. We never request your Google password.
+                </p>
+              </div>
+
+              <div className="p-3.5 bg-gray-50 dark:bg-[#272729] rounded-xl border border-gray-200 dark:border-[#343536] space-y-1">
+                <div className="font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
+                  <Database className="w-4 h-4 text-emerald-500" />
+                  Content Submissions
+                </div>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Titles, text, media links, and comments you post to public communities or chat channels, stored securely in encrypted databases.
+                </p>
+              </div>
+            </div>
           </section>
 
           {/* Section 2 */}
-          <section className="space-y-2">
-            <h2 className="font-serif font-bold text-sm text-[#071931] dark:text-white uppercase tracking-wide flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-              <span className="font-mono text-xs text-[#c5a059]">02.</span>
-              Information Collected via Google Authentication
-            </h2>
+          <section className="space-y-3">
+            <div className="flex items-center gap-2.5 text-base font-bold text-gray-900 dark:text-white">
+              <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-bold">
+                2
+              </div>
+              <h2>How We Use Your Information</h2>
+            </div>
             <p>
-              When an operative initiates Google Sign-In through our OAuth 2.0 authorization pipeline, we request only the minimal, basic profile information:
+              We utilize collected data solely to deliver the platform features:
             </p>
-            <ul className="list-disc list-inside space-y-1 pl-2 font-mono text-[11px] text-slate-600 dark:text-slate-400">
-              <li><strong>Email Address:</strong> Used solely to identify authorized operatives and verify administrative clearance tiers.</li>
-              <li><strong>Display Name:</strong> Used to generate your operative identity or codename alias.</li>
-              <li><strong>Profile Avatar:</strong> Used strictly for local session display within the operative console ribbon.</li>
+            <ul className="space-y-2 text-xs pl-2">
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <span><strong>Enforcing Fair Voting:</strong> Your authenticated user ID is recorded to ensure one vote per user and prevent manipulation.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <span><strong>Community Moderation:</strong> Authenticating authors to prevent spam and maintain safe communities.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <span><strong>Zero Commercial Sale:</strong> We do NOT sell, rent, monetize, or broker your personal data to third parties or advertising brokers.</span>
+              </li>
             </ul>
-            <p className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xs border border-slate-200 dark:border-slate-800 text-[11px]">
-              <Lock className="w-3.5 h-3.5 inline mr-1 text-[#c5a059]" />
-              <strong>Google User Data Commitment:</strong> We do NOT access, inspect, or share Google Contacts, Drive files, Calendar events, 
-              or any personal Google account data beyond standard OAuth authentication tokens. We do not sell or monetize personal data under any circumstance.
-            </p>
           </section>
 
           {/* Section 3 */}
-          <section className="space-y-2">
-            <h2 className="font-serif font-bold text-sm text-[#071931] dark:text-white uppercase tracking-wide flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-              <span className="font-mono text-xs text-[#c5a059]">03.</span>
-              User Submissions & Depositions
-            </h2>
+          <section className="space-y-3">
+            <div className="flex items-center gap-2.5 text-base font-bold text-gray-900 dark:text-white">
+              <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-bold">
+                3
+              </div>
+              <h2>Data Security & Encryption</h2>
+            </div>
             <p>
-              Operatives contributing case reports, incident debriefings, or multimedia files (audio recordings, video exhibits, screenshots) 
-              may choose to submit depositions either attributed to their operative credentials or completely anonymously:
+              All traffic between your browser and our servers is secured with TLS/HTTPS encryption. Session tokens are signed using cryptographic JWTs, and all deletion passkeys are one-way hashed with bcrypt. Content and database operations are isolated and protected against unauthorized injection.
             </p>
-            <ul className="list-disc list-inside space-y-1 pl-2 font-mono text-[11px] text-slate-600 dark:text-slate-400">
-              <li><strong>Anonymous Depositions:</strong> If the "Lodge as Anonymous Operative" switch is toggled, all author email links are omitted from the public index.</li>
-              <li><strong>Passkeys:</strong> Operatives may set a voluntary deletion passkey upon filing, which is irreversibly hashed using standard cryptographic algorithms (bcrypt) and never stored in plain text.</li>
-              <li><strong>GridFS Media Isolation:</strong> Uploaded digital assets are stored securely in dedicated MongoDB GridFS buckets with MIME-type sanitization.</li>
-            </ul>
           </section>
 
           {/* Section 4 */}
-          <section className="space-y-2">
-            <h2 className="font-serif font-bold text-sm text-[#071931] dark:text-white uppercase tracking-wide flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-              <span className="font-mono text-xs text-[#c5a059]">04.</span>
-              Bot Mitigation & Google reCAPTCHA v3
-            </h2>
-            <p>
-              To protect the repository against brute-force intrusion, automated spamming, and malicious bots, our deposition portal implements 
-              <strong>Google reCAPTCHA v3</strong>. Interaction metrics are evaluated in the background to verify human authenticity without disrupting 
-              the operative workflow. Use of reCAPTCHA is subject to Google's standard Privacy Policy and Terms of Service.
-            </p>
-          </section>
-
-          {/* Section 5 */}
-          <section className="space-y-2">
-            <h2 className="font-serif font-bold text-sm text-[#071931] dark:text-white uppercase tracking-wide flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-              <span className="font-mono text-xs text-[#c5a059]">05.</span>
-              AI Ranking Algorithm & Feature Extraction
-            </h2>
-            <p>
-              The repository utilizes an in-house, multi-stage algorithmic ranking engine (Wilson Bayesian confidence, PageRank network centrality, 
-              and lexical verification) to prioritize exhibits on the central docket. The ranking engine operates strictly on public post attributes 
-              (verification stamps, exhibit corroboration, recency) and does NOT profile individual visitors or harvest behavioral tracking cookies.
-            </p>
-          </section>
-
-          {/* Section 6 */}
-          <section className="space-y-2">
-            <h2 className="font-serif font-bold text-sm text-[#071931] dark:text-white uppercase tracking-wide flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-              <span className="font-mono text-xs text-[#c5a059]">06.</span>
-              Data Deletion & Redaction Requests
-            </h2>
-            <p>
-              Any subject or operative wishing to redact, expunge, or delete any record, deposition, or media exhibit lodged in The Shreyash Files 
-              may do so immediately:
-            </p>
-            <ul className="list-disc list-inside space-y-1 pl-2 font-mono text-[11px] text-slate-600 dark:text-slate-400">
-              <li>Directly via the incident dossier page using the case passkey set at creation time.</li>
-              <li>By contacting the repository administrator at <code className="font-mono text-[#071931] dark:text-[#d8c396]">ankittsu2@gmail.com</code> with the Incident Docket Number for prompt expungement.</li>
-            </ul>
-          </section>
-
-          {/* Section 7 */}
-          <section className="space-y-2">
-            <h2 className="font-serif font-bold text-sm text-[#071931] dark:text-white uppercase tracking-wide flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-              <span className="font-mono text-xs text-[#c5a059]">07.</span>
-              Administrative Inquiries
-            </h2>
-            <p>
-              For legal notifications, compliance reviews, or inquiries regarding this Privacy Policy, contact:
-            </p>
-            <div className="bg-slate-100 dark:bg-slate-900 p-3 rounded-xs border border-slate-300 dark:border-slate-800 font-mono text-[11px] space-y-0.5">
-              <div className="font-bold text-slate-900 dark:text-white">Central Repository Directorate</div>
-              <div>Entity: The Shreyash Files Digital Intelligence Vault</div>
-              <div>Direct Inquiries: <span className="text-cyan-600 dark:text-cyan-400">ankittsu2@gmail.com</span></div>
-              <div>Platform Host: Render.com Cloud Infrastructure</div>
+          <section className="space-y-3">
+            <div className="flex items-center gap-2.5 text-base font-bold text-gray-900 dark:text-white">
+              <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-bold">
+                4
+              </div>
+              <h2>Your Control & Data Deletion Rights</h2>
             </div>
+            <p>
+              You have complete control over your content. You may delete individual posts or comments at any time. If you wish to delete your entire presence, you can initiate a complete purge via the <Link href="/settings" className="text-[#ff4500] hover:underline font-semibold">Settings Page</Link>, which immediately deletes your files, comments, and interactions from MongoDB.
+            </p>
           </section>
         </div>
 
-        {/* Footer Ribbon */}
-        <div className="bg-slate-100 dark:bg-slate-900/80 px-6 py-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px] font-mono text-slate-500">
-          <div className="flex items-center gap-1.5">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>GDPR & CCPA COMPLIANCE ACKNOWLEDGED</span>
+        {/* Footer info box */}
+        <div className="px-6 py-4 bg-gray-50 dark:bg-[#121213] border-t border-gray-200 dark:border-[#343536] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
+          <div className="flex items-center gap-2">
+            <EyeOff className="w-4 h-4 text-emerald-500" />
+            <span>Zero trackers • Zero third-party ad brokers</span>
           </div>
-          <Link href="/terms" className="hover:underline text-[#071931] dark:text-[#d8c396]">
-            View Terms of Service →
+          <Link href="/terms" className="text-[#ff4500] hover:underline font-semibold">
+            Read User Agreement →
           </Link>
         </div>
       </div>

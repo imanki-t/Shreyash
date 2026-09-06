@@ -167,7 +167,7 @@ export default function CommunityArchivePage() {
               }`}
             >
               <Flame className="w-4 h-4 text-orange-500" />
-              <span>Hot</span>
+              <span>Trending</span>
             </button>
             <button
               onClick={() => setSort("new")}

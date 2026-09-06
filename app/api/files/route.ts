@@ -6,6 +6,8 @@ import sanitizeHtml from "sanitize-html";
 import { DEFAULT_DOCKETS } from "@/lib/defaultDockets";
 import { verifyRecaptcha } from "@/lib/recaptcha";
 import { AIRankingEngine, PostInput } from "@/ai-ranking-engine";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 const rankingEngine = new AIRankingEngine();
 
@@ -140,6 +142,14 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Guests cannot create posts. Please sign in to participate." },
+        { status: 401 }
+      );
+    }
+
     const formData = await req.formData();
     const recaptchaToken = formData.get("recaptchaToken") as string;
     const recaptchaResult = await verifyRecaptcha(recaptchaToken);

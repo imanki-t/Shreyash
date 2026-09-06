@@ -8,10 +8,11 @@ import {
   Plus,
   Compass,
   User,
-  Gamepad2,
-  Mic,
-  Camera,
-  Layers,
+  Sparkles,
+  Smile,
+  Cpu,
+  HelpCircle,
+  Music,
   Settings,
   Menu,
   MessageSquare,
@@ -179,35 +180,43 @@ export default function Header() {
           </Link>
 
           <Link
-            href="/identity"
+            href="/archive/general"
             className="px-3 py-1 rounded-md hover:bg-gray-200 dark:hover:bg-[#272729] hover:text-gray-900 dark:hover:text-white transition flex items-center gap-1.5 whitespace-nowrap"
           >
-            <User className="w-3.5 h-3.5 text-emerald-500" />
-            <span>About Shreyash</span>
+            <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+            <span>c/general</span>
           </Link>
 
           <Link
-            href="/archive/simulation-operations"
+            href="/archive/memes"
             className="px-3 py-1 rounded-md hover:bg-gray-200 dark:hover:bg-[#272729] hover:text-gray-900 dark:hover:text-white transition flex items-center gap-1.5 whitespace-nowrap"
           >
-            <Gamepad2 className="w-3.5 h-3.5 text-purple-500" />
-            <span>Gaming & Sims</span>
+            <Smile className="w-3.5 h-3.5 text-amber-500" />
+            <span>c/memes</span>
           </Link>
 
           <Link
-            href="/archive/verbal-intercepts"
+            href="/archive/tech"
             className="px-3 py-1 rounded-md hover:bg-gray-200 dark:hover:bg-[#272729] hover:text-gray-900 dark:hover:text-white transition flex items-center gap-1.5 whitespace-nowrap"
           >
-            <Mic className="w-3.5 h-3.5 text-amber-500" />
-            <span>Voice & Audio</span>
+            <Cpu className="w-3.5 h-3.5 text-emerald-500" />
+            <span>c/tech</span>
           </Link>
 
           <Link
-            href="/archive/photographic-evidence"
+            href="/archive/ask"
             className="px-3 py-1 rounded-md hover:bg-gray-200 dark:hover:bg-[#272729] hover:text-gray-900 dark:hover:text-white transition flex items-center gap-1.5 whitespace-nowrap"
           >
-            <Camera className="w-3.5 h-3.5 text-rose-500" />
-            <span>Photos & Clips</span>
+            <HelpCircle className="w-3.5 h-3.5 text-purple-500" />
+            <span>c/ask</span>
+          </Link>
+
+          <Link
+            href="/archive/music"
+            className="px-3 py-1 rounded-md hover:bg-gray-200 dark:hover:bg-[#272729] hover:text-gray-900 dark:hover:text-white transition flex items-center gap-1.5 whitespace-nowrap"
+          >
+            <Music className="w-3.5 h-3.5 text-rose-500" />
+            <span>c/music</span>
           </Link>
 
           <Link

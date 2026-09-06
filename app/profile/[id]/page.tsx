@@ -256,7 +256,7 @@ export default function UserProfilePage() {
               }`}
             >
               <Flame className="w-3.5 h-3.5 text-orange-500" />
-              <span>Hot</span>
+              <span>Trending</span>
             </button>
             <button
               onClick={() => setSort("new")}
