@@ -86,11 +86,16 @@ export async function PATCH(
         return NextResponse.json({ error: "New deposition narrative required." }, { status: 400 });
       }
 
-      const sanitizedNarrative = sanitizeHtml(newNarrative, {
+      const transformedNarrative = newNarrative.replace(
+        /<\/\s*([\s\S]*?)\s*\\>/g,
+        '<span class="classified-spoiler" data-spoiler="true" role="button" tabindex="0" title="Classified Redaction: Click to Decrypt">$1</span>'
+      );
+
+      const sanitizedNarrative = sanitizeHtml(transformedNarrative, {
         allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img", "span", "b", "i", "u", "s", "mark", "pre", "code"]),
         allowedAttributes: {
           ...sanitizeHtml.defaults.allowedAttributes,
-          span: ["class", "data-*"],
+          span: ["class", "data-*", "role", "tabindex", "title"],
           mark: ["class"],
         },
       });

@@ -78,6 +78,11 @@ export async function GET(req: NextRequest) {
         authorCodename: c.author?.codename || "Operative",
         isAnonymous: Boolean(c.author?.isAnonymous),
         isRedacted: Boolean(c.isRedacted),
+        engagement: {
+          views: c.engagement?.views || 0,
+          totalDwellSeconds: c.engagement?.totalDwellSeconds || 0,
+          scrollDepthCount: c.engagement?.scrollDepthCount || 0,
+        },
       }));
 
       const rankingResponse = rankingEngine.rank({
@@ -150,11 +155,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const sanitizedNarrative = sanitizeHtml(debriefNarrative, {
+    const transformedNarrative = debriefNarrative.replace(
+      /<\/\s*([\s\S]*?)\s*\\>/g,
+      '<span class="classified-spoiler" data-spoiler="true" role="button" tabindex="0" title="Classified Redaction: Click to Decrypt">$1</span>'
+    );
+
+    const sanitizedNarrative = sanitizeHtml(transformedNarrative, {
       allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img", "span", "b", "i", "u", "s", "mark", "pre", "code"]),
       allowedAttributes: {
         ...sanitizeHtml.defaults.allowedAttributes,
-        span: ["class", "data-*"],
+        span: ["class", "data-*", "role", "tabindex", "title"],
         mark: ["class"],
       },
     });
@@ -232,6 +242,12 @@ export async function POST(req: NextRequest) {
       emojis: { thumbsUp: 0, thumbsDown: 0, laugh: 0, skull: 0, heart: 0 },
       ratings: { totalScore: 0, count: 0, average: 0 },
       amendments: [],
+      engagement: {
+        views: 0,
+        totalDwellSeconds: 0,
+        scrollDepthCount: 0,
+      },
+      reports: [],
       isRedacted: false,
       isDeleted: false,
     });

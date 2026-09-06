@@ -49,6 +49,19 @@ export interface IPost extends Document {
     average: number;
   };
   amendments: IAmendment[];
+  engagement: {
+    views: number;
+    totalDwellSeconds: number;
+    scrollDepthCount: number;
+    lastEngagedAt?: Date;
+  };
+  reports: Array<{
+    reason: string;
+    category: string;
+    reportedAt: Date;
+    reporterCodename?: string;
+    notes?: string;
+  }>;
   isRedacted: boolean;
   isDeleted: boolean;
   createdAt: Date;
@@ -105,6 +118,21 @@ const PostSchema = new Schema<IPost>(
       average: { type: Number, default: 0 },
     },
     amendments: [AmendmentSchema],
+    engagement: {
+      views: { type: Number, default: 0 },
+      totalDwellSeconds: { type: Number, default: 0 },
+      scrollDepthCount: { type: Number, default: 0 },
+      lastEngagedAt: { type: Date },
+    },
+    reports: [
+      {
+        reason: { type: String, required: true },
+        category: { type: String, default: "discrepancy" },
+        reportedAt: { type: Date, default: Date.now },
+        reporterCodename: { type: String },
+        notes: { type: String },
+      },
+    ],
     isRedacted: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
   },

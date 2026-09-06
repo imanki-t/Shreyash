@@ -70,24 +70,48 @@ body {
   background-color: rgba(217, 119, 6, 0.08);
 }
 
-/* Blackout Redaction Marker */
-.redacted-tape {
+/* Discord-Style Blackout Redaction Spoiler (Click to Reveal) */
+.redacted-tape,
+.classified-spoiler {
   background-color: #071931;
-  color: #071931;
+  color: transparent !important;
   user-select: none;
-  padding: 0.05rem 0.35rem;
-  border-radius: 2px;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
   cursor: pointer;
-  transition: all 0.15s ease-in-out;
-  display: inline-block;
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+  display: inline;
   margin: 0 0.15rem;
+  border: 1px solid #0f274a;
+  position: relative;
+  text-shadow: none;
 }
 
-.redacted-tape:hover,
-.redacted-tape.revealed {
-  background-color: #1e293b;
-  color: #f8fafc;
+.redacted-tape:not(.revealed):hover,
+.classified-spoiler:not(.revealed):hover {
+  background-color: #0a2140;
+  border-color: #1a3c6c;
+}
+
+.redacted-tape::selection,
+.classified-spoiler::selection {
+  background-color: transparent;
+  color: transparent;
+}
+
+.redacted-tape.revealed,
+.classified-spoiler.revealed {
+  background-color: rgba(7, 25, 49, 0.12);
+  color: inherit !important;
   user-select: auto;
+  border-color: #c5a059;
+}
+
+.dark .redacted-tape.revealed,
+.dark .classified-spoiler.revealed {
+  background-color: rgba(13, 39, 77, 0.45);
+  color: #f1f5f9 !important;
+  border-color: #c5a059;
 }
 
 /* Federal Metallic Bevel Button */

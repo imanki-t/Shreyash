@@ -21,19 +21,31 @@ export default function RedactedText({
   const rawText = content || text;
 
   if (rawText) {
-    // Parse strings containing ||secret text|| syntax
-    const parts = rawText.split(/(\|\|.*?\|\|)/g);
+    const parts = rawText.split(
+      /(<\/[^>]*?\\>|\|\|[\s\S]*?\|\||<span[^>]*class="[^"]*classified-spoiler[^"]*"[^>]*>[\s\S]*?<\/span>)/g
+    );
     return (
       <span className={className}>
         {parts.map((part, index) => {
-          if (part.startsWith("||") && part.endsWith("||")) {
-            const secret = part.slice(2, -2);
-            return (
-              <InlineRedacted key={index}>
-                {secret}
-              </InlineRedacted>
-            );
+          if (!part) return null;
+
+          if (part.startsWith("</") && part.endsWith("\\>")) {
+            const secret = part.slice(2, -2).trim();
+            return <InlineRedacted key={index}>{secret}</InlineRedacted>;
           }
+
+          if (part.startsWith("||") && part.endsWith("||")) {
+            const secret = part.slice(2, -2).trim();
+            return <InlineRedacted key={index}>{secret}</InlineRedacted>;
+          }
+
+          const spanMatch = part.match(
+            /<span[^>]*class="[^"]*classified-spoiler[^"]*"[^>]*>([\s\S]*?)<\/span>/i
+          );
+          if (spanMatch) {
+            return <InlineRedacted key={index}>{spanMatch[1]}</InlineRedacted>;
+          }
+
           return <span key={index}>{part}</span>;
         })}
       </span>
@@ -55,11 +67,23 @@ function InlineRedacted({ children }: { children: React.ReactNode }) {
   const [revealed, setRevealed] = useState(false);
   return (
     <span
-      onClick={() => setRevealed(!revealed)}
-      title={revealed ? "Click to Re-Censor" : "CLASSIFIED // Click to Declassify"}
-      className={`redacted-tape ${revealed ? "revealed" : ""}`}
+      onClick={(e) => {
+        e.stopPropagation();
+        setRevealed(!revealed);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.stopPropagation();
+          setRevealed(!revealed);
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      title={revealed ? "Click to Re-Censor" : "CLASSIFIED REDACTION // Click to Decrypt"}
+      className={`redacted-tape classified-spoiler ${revealed ? "revealed" : ""}`}
     >
-      {revealed ? children : "█".repeat(12)}
+      {children}
     </span>
   );
 }

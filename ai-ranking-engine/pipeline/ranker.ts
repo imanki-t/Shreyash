@@ -19,7 +19,7 @@ export class AIRankingEngine {
 
   constructor() {
     this.featureExtractor = new FeatureExtractor();
-    this.neuralNet = new NeuralRankingNetwork(13, [32, 16, 1]);
+    this.neuralNet = new NeuralRankingNetwork(16, [32, 16, 1]);
     this.bayesianScorer = new BayesianCredibilityScorer();
     this.collaborativeFilter = new MatrixFactorizationRecommender();
   }
@@ -55,14 +55,19 @@ export class AIRankingEngine {
       const severityScore = features.featureMap.bayesianSeverity || 0;
       const mediaScore = features.featureMap.mediaScore || 0;
       const velocityScore = features.featureMap.engagementVelocity || 0;
+      const dwellScore = features.featureMap.dwellScore || 0;
+      const scrollRate = features.featureMap.scrollRate || 0;
+      const reportPenalty = features.featureMap.reportPenalty || 0;
 
       let weightedScore =
-        neuralScore * 0.35 +
-        bayesianResult.lowerBound * 0.25 +
-        recencyScore * 0.15 +
-        severityScore * 0.10 +
-        mediaScore * 0.08 +
-        velocityScore * 0.07;
+        neuralScore * 0.28 +
+        bayesianResult.lowerBound * 0.20 +
+        dwellScore * 0.16 +
+        scrollRate * 0.10 +
+        recencyScore * 0.10 +
+        severityScore * 0.08 +
+        mediaScore * 0.08 -
+        reportPenalty * 0.25;
 
       if (post.isRedacted) {
         weightedScore *= 0.7;
@@ -83,12 +88,14 @@ export class AIRankingEngine {
         diversityPenalty: 0,
         rank: 0,
         featureContributions: {
-          neural: neuralScore * 0.35,
-          bayesian: bayesianResult.lowerBound * 0.25,
-          recency: recencyScore * 0.15,
-          severity: severityScore * 0.10,
+          neural: neuralScore * 0.28,
+          bayesian: bayesianResult.lowerBound * 0.20,
+          dwell: dwellScore * 0.16,
+          scroll: scrollRate * 0.10,
+          recency: recencyScore * 0.10,
+          severity: severityScore * 0.08,
           media: mediaScore * 0.08,
-          velocity: velocityScore * 0.07,
+          reportPenalty: reportPenalty * -0.25,
           controversy: controversyScore,
         },
       });

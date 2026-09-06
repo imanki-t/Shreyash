@@ -3,14 +3,13 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Printer, ShieldAlert, ArrowLeft, Edit3, Trash2, History } from "lucide-react";
+import { Printer, ShieldAlert, ArrowLeft, Edit3, Trash2, History, Flag, CheckCircle2, AlertTriangle } from "lucide-react";
 import { useSession } from "next-auth/react";
 import MediaPlayer from "@/components/MediaPlayer";
 import ReactionConsole from "@/components/ReactionConsole";
 import InvestigatorFieldLog from "@/components/InvestigatorFieldLog";
 import RedactedText from "@/components/RedactedText";
 import { IPost } from "@/models/Post";
- 
 
 export default function PostDetailPage() {
   const params = useParams();
@@ -18,7 +17,7 @@ export default function PostDetailPage() {
   const { data: session } = useSession();
   const id = params?.id as string;
 
-  const [caseFile, setCaseFile] = useState<IPost | null>(null);
+  const [caseFile, setCaseFile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [amendModalOpen, setAmendModalOpen] = useState(false);
@@ -26,6 +25,85 @@ export default function PostDetailPage() {
   const [amendSummary, setAmendSummary] = useState("");
   const [passkey, setPasskey] = useState("");
   const [amendError, setAmendError] = useState<string | null>(null);
+
+  // Report Anomaly state
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportCategory, setReportCategory] = useState("discrepancy");
+  const [reportNotes, setReportNotes] = useState("");
+  const [reporting, setReporting] = useState(false);
+  const [reportSuccess, setReportSuccess] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
+
+  // Client-Side Engagement Telemetry: Dwell time & scroll depth
+  useEffect(() => {
+    if (!id) return;
+    let startTime = Date.now();
+    let accumulatedDwell = 0;
+    let isTabVisible = !document.hidden;
+    let hasScrolled = false;
+    let maxScroll = 0;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        if (isTabVisible) {
+          accumulatedDwell += Math.round((Date.now() - startTime) / 1000);
+          isTabVisible = false;
+        }
+      } else {
+        startTime = Date.now();
+        isTabVisible = true;
+      }
+    };
+
+    const handleScroll = () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      if (scrollHeight > 0) {
+        const pct = Math.round((scrollTop / scrollHeight) * 100);
+        if (pct > maxScroll) maxScroll = pct;
+        if (pct >= 40) hasScrolled = true;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    const sendTelemetry = () => {
+      let finalDwell = accumulatedDwell;
+      if (isTabVisible) {
+        finalDwell += Math.round((Date.now() - startTime) / 1000);
+      }
+      if (finalDwell < 2) return;
+
+      const payload = JSON.stringify({
+        dwellSeconds: finalDwell,
+        scrolled: hasScrolled,
+        scrollPercentage: maxScroll,
+      });
+
+      const endpoint = `/api/files/${id}/engagement`;
+      if (typeof navigator !== "undefined" && navigator.sendBeacon) {
+        navigator.sendBeacon(endpoint, new Blob([payload], { type: "application/json" }));
+      } else {
+        fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: payload,
+          keepalive: true,
+        }).catch(() => {});
+      }
+    };
+
+    window.addEventListener("beforeunload", sendTelemetry);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", sendTelemetry);
+      sendTelemetry();
+    };
+  }, [id]);
 
   useEffect(() => {
     if (id) fetchCase();
@@ -132,6 +210,49 @@ export default function PostDetailPage() {
     }
   };
 
+  const handleReportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reportReason.trim()) {
+      setReportError("Reason for anomaly report is required.");
+      return;
+    }
+    setReporting(true);
+    setReportError(null);
+
+    try {
+      const res = await fetch(`/api/files/${id}/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reason: reportReason.trim(),
+          category: reportCategory,
+          notes: reportNotes.trim(),
+          reporterCodename: session?.user?.name || "Operative",
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setReportSuccess(true);
+        if (caseFile && data.stamps) {
+          setCaseFile({ ...caseFile, stamps: data.stamps });
+        }
+        setTimeout(() => {
+          setReportModalOpen(false);
+          setReportSuccess(false);
+          setReportReason("");
+          setReportNotes("");
+        }, 1600);
+      } else {
+        setReportError(data.error || "Failed to lodge anomaly report.");
+      }
+    } catch (err: any) {
+      setReportError(err.message || "Network error lodging report.");
+    } finally {
+      setReporting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-12 text-center font-mono text-xs text-slate-500">
@@ -184,6 +305,18 @@ export default function PostDetailPage() {
             className="btn-metallic px-2.5 py-1 text-xs font-serif font-bold rounded-xs flex items-center gap-1 cursor-pointer"
           >
             <Edit3 className="w-3.5 h-3.5" /> Amend
+          </button>
+
+          <button
+            onClick={() => {
+              setReportError(null);
+              setReportSuccess(false);
+              setReportModalOpen(true);
+            }}
+            className="btn-metallic px-2.5 py-1 text-xs font-serif font-bold rounded-xs flex items-center gap-1 cursor-pointer text-amber-300 hover:text-rose-400"
+            title="Flag Record / File Anomaly Report"
+          >
+            <Flag className="w-3.5 h-3.5 text-rose-500" /> Flag / Report
           </button>
 
           <button
@@ -274,7 +407,7 @@ export default function PostDetailPage() {
                   REVISION AUDIT TRAIL ({caseFile.amendments.length} AMENDMENTS LOGGED)
                 </div>
                 <div className="space-y-1.5 divide-y divide-slate-300/60 dark:divide-slate-700">
-                  {caseFile.amendments.map((amend, idx) => (
+                  {caseFile.amendments.map((amend: any, idx: number) => (
                     <div key={idx} className="pt-1.5 text-[11px] text-slate-600 dark:text-slate-400">
                       <span className="font-bold text-slate-800 dark:text-slate-200">
                         {new Date(amend.timestamp).toLocaleDateString()}:
@@ -366,6 +499,108 @@ export default function PostDetailPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Flag / Report Anomaly Modal */}
+      {reportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 font-sans backdrop-blur-xs">
+          <div className="bg-white dark:bg-[#111822] border-2 border-rose-900/60 p-5 max-w-md w-full rounded-xs shadow-2xl space-y-4">
+            <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+              <div className="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-950/60 border border-rose-400 flex items-center justify-center">
+                <Flag className="w-4 h-4 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="font-serif font-bold text-sm uppercase text-slate-900 dark:text-white">
+                  FILE ANOMALY REPORT / CODE BREACH
+                </h3>
+                <p className="font-mono text-[10px] text-slate-500">
+                  FLAG CASE {caseFile.caseNumber} FOR REPOSITORY AUDIT
+                </p>
+              </div>
+            </div>
+
+            {reportSuccess ? (
+              <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-400 rounded-xs text-center space-y-1 font-mono text-xs text-emerald-800 dark:text-emerald-300">
+                <CheckCircle2 className="w-6 h-6 text-emerald-600 mx-auto" />
+                <div className="font-bold">ANOMALY LODGED IN AUDIT STREAM</div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                  AI ranking weights updated. Incident credibility score adjusted.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleReportSubmit} className="space-y-3 text-xs">
+                <div>
+                  <label className="block font-mono font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                    Anomaly Classification:
+                  </label>
+                  <select
+                    value={reportCategory}
+                    onChange={(e) => setReportCategory(e.target.value)}
+                    className="w-full p-2 border border-slate-300 dark:border-slate-700 rounded-xs bg-slate-50 dark:bg-slate-900 font-mono text-xs"
+                  >
+                    <option value="discrepancy">Discrepancy / Inaccurate Incident Facts</option>
+                    <option value="sensitive">Sensitive / Non-Consensual Intel Exhibit</option>
+                    <option value="spoiler">Unredacted Spoiler / Directive Leak</option>
+                    <option value="malicious">Malicious / Harassment Deposition</option>
+                    <option value="other">Other Protocol Breach</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-mono font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                    Reason for Anomaly Flag *:
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Describe discrepancy or violation..."
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    className="w-full p-2 border border-slate-300 dark:border-slate-700 rounded-xs bg-slate-50 dark:bg-slate-900 font-serif"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-mono font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                    Operative Field Notes (Optional):
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Optional corroborating details or timestamp..."
+                    value={reportNotes}
+                    onChange={(e) => setReportNotes(e.target.value)}
+                    className="w-full p-2 border border-slate-300 dark:border-slate-700 rounded-xs bg-slate-50 dark:bg-slate-900 font-serif text-xs"
+                  />
+                </div>
+
+                {reportError && (
+                  <div className="p-2 bg-rose-50 border border-rose-300 text-rose-700 rounded-xs font-mono text-[11px] flex items-center gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    <span>{reportError}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setReportModalOpen(false)}
+                    className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 rounded-xs"
+                  >
+                    Dismiss
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={reporting}
+                    className="px-4 py-1.5 bg-rose-700 hover:bg-rose-800 text-white font-serif font-bold text-xs rounded-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    <Flag className="w-3.5 h-3.5" />
+                    <span>{reporting ? "Filing..." : "Transmit Anomaly Flag"}</span>
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

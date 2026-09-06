@@ -19,6 +19,8 @@ export class FeatureExtractor {
       discrepancyPenalty: -0.15,
       redactionPenalty: -0.05,
       authorityWeight: 0.10,
+      dwellTimeWeight: 0.16,
+      scrollDepthWeight: 0.10,
     };
     this.sentimentLexicon = new Map<string, number>([
       ["verified", 1.5],
@@ -99,6 +101,15 @@ export class FeatureExtractor {
     const authorAuthority = post.isAnonymous ? 0.3 : 0.8;
     const redactionPenalty = post.isRedacted ? 0.8 : 0.0;
 
+    const views = Math.max(1, post.engagement?.views || 1);
+    const avgDwell = (post.engagement?.totalDwellSeconds || 0) / views;
+    const dwellScore = Math.min(1.0, Math.log1p(avgDwell) / Math.log1p(45));
+    const scrollRate = Math.min(1.0, (post.engagement?.scrollDepthCount || 0) / views);
+
+    const flaggedCount = post.stamps.flaggedAnomaly || 0;
+    const discrepancyCount = post.stamps.discrepancyDetected || 0;
+    const reportPenalty = Math.min(1.0, flaggedCount * 0.15 + discrepancyCount * 0.35);
+
     const featureMap: Record<string, number> = {
       recencyScore,
       corroborationScore,
@@ -113,6 +124,9 @@ export class FeatureExtractor {
       isRestricted,
       authorAuthority,
       redactionPenalty,
+      dwellScore,
+      scrollRate,
+      reportPenalty,
     };
 
     const rawVector = [
@@ -129,6 +143,9 @@ export class FeatureExtractor {
       isRestricted,
       authorAuthority,
       redactionPenalty,
+      dwellScore,
+      scrollRate,
+      reportPenalty,
     ];
 
     const normalizedVector = new Float64Array(rawVector.length);

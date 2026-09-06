@@ -48,7 +48,7 @@ export default function UploadPage() {
   };
 
   const handleInsertRedaction = () => {
-    setNarrative((prev) => prev + " ||CENSORED EVIDENCE|| ");
+    setNarrative((prev) => prev + " </ CLASSIFIED SPOILER \\> ");
   };
 
   const handleInsertTimestamp = () => {
@@ -300,10 +300,10 @@ export default function UploadPage() {
                 <button
                   type="button"
                   onClick={handleInsertRedaction}
-                  className="px-2 py-0.5 bg-black text-white font-mono text-[10px] font-bold rounded-xs cursor-pointer hover:bg-zinc-800"
-                  title="Insert Classified Blackout Redaction"
+                  className="px-2 py-0.5 bg-[#071931] border border-[#c5a059] text-[#d8c396] font-mono text-[10px] font-bold rounded-xs cursor-pointer hover:bg-[#0d274d]"
+                  title="Insert Discord-style click-to-reveal redacted spoiler"
                 >
-                  + [REDACT]
+                  + Spoiler &lt;/ xyz \&gt;
                 </button>
                 <button
                   type="button"
@@ -327,7 +327,7 @@ export default function UploadPage() {
               rows={8}
               value={narrative}
               onChange={(e) => setNarrative(e.target.value)}
-              placeholder="Provide a chronological, matter-of-fact intelligence debrief describing the incident, subject actions, server impact, and dialogue. Use ||text|| to redact classified portions."
+              placeholder="Provide a chronological, matter-of-fact intelligence debrief describing the incident, subject actions, and dialogue. Use </ text \> to insert Discord-style click-to-reveal blacked-out redactions."
               className="w-full p-3 border border-slate-300 dark:border-slate-700 rounded-xs bg-white dark:bg-slate-900 font-serif leading-relaxed text-sm"
             />
           </div>

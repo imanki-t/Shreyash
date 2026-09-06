@@ -42,6 +42,11 @@ export interface PostInput {
   authorCodename: string;
   isAnonymous: boolean;
   isRedacted: boolean;
+  engagement?: {
+    views: number;
+    totalDwellSeconds: number;
+    scrollDepthCount: number;
+  };
 }
 
 export interface ExtractedFeatures {
@@ -61,6 +66,8 @@ export interface FeatureWeights {
   discrepancyPenalty: number;
   redactionPenalty: number;
   authorityWeight: number;
+  dwellTimeWeight: number;
+  scrollDepthWeight: number;
 }
 
 export interface Hyperparameters {
