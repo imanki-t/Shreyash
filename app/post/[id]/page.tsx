@@ -390,7 +390,14 @@ export default function PostDetailPage() {
                 OFFICIAL DEPOSITION NARRATIVE
               </span>
               <span className="text-[10px] font-mono text-slate-500">
-                BY: {caseFile.author.codename}
+                BY:{" "}
+                <Link
+                  href={`/profile/${encodeURIComponent(caseFile.author.codename || "Operative")}`}
+                  className="hover:underline text-[#071931] dark:text-[#dfb76c] font-bold transition-colors"
+                  title="View Operative Dossier"
+                >
+                  {caseFile.author.codename}
+                </Link>
               </span>
             </div>
 

@@ -130,8 +130,16 @@ export default function OperativeModal({ isOpen, onClose }: OperativeModalProps)
                 </div>
               </div>
 
-              {isMasterAdmin && (
-                <div className="mt-3 pt-2 border-t border-[#1e3a63]">
+              <div className="mt-3 pt-2 border-t border-[#1e3a63] space-y-2">
+                <Link
+                  href={`/profile/${encodeURIComponent(session.user.name || session.user.email || "Operative")}`}
+                  onClick={onClose}
+                  className="block text-center py-1.5 px-3 bg-[#0d264a] hover:bg-[#133566] text-[#dfb76c] border border-[#c5a059]/70 font-bold text-xs uppercase tracking-wider rounded-xs transition"
+                >
+                  View My Operative Dossier & Incidents →
+                </Link>
+
+                {isMasterAdmin && (
                   <Link
                     href="/admin"
                     onClick={onClose}
@@ -139,8 +147,8 @@ export default function OperativeModal({ isOpen, onClose }: OperativeModalProps)
                   >
                     Open Directorate Oversight Console →
                   </Link>
-                </div>
-              )}
+                )}
+              </div>
 
               <button
                 onClick={() => signOut()}

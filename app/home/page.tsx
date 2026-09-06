@@ -12,7 +12,7 @@ export default function HomePage() {
   const [cases, setCases] = useState<any[]>([]);
   const [identity, setIdentity] = useState<any>(null);
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("ai");
+  const [sort, setSort] = useState("trending");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -87,9 +87,9 @@ export default function HomePage() {
               className="py-1.5 px-2.5 text-xs bg-white dark:bg-slate-900 border border-[#b8b3a5] dark:border-slate-700 font-mono rounded-xs text-slate-800 dark:text-slate-200 focus:outline-hidden"
               title="Algorithm Ranking Order"
             >
-              <option value="ai">AI Priority Rank</option>
-              <option value="date_desc">Newest First</option>
-              <option value="date_asc">Oldest First</option>
+              <option value="trending">🔥 Trending (AI Priority)</option>
+              <option value="new">⚡ Newest First</option>
+              <option value="old">⏳ Oldest First</option>
             </select>
             <button
               type="submit"

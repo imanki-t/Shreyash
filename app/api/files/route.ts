@@ -14,7 +14,8 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const docket = searchParams.get("docket");
     const search = searchParams.get("search");
-    const sort = searchParams.get("sort") || "ai";
+    const author = searchParams.get("author");
+    const sort = searchParams.get("sort") || "trending";
     const limit = parseInt(searchParams.get("limit") || "50", 10);
     const page = parseInt(searchParams.get("page") || "1", 10);
 
@@ -32,19 +33,36 @@ export async function GET(req: NextRequest) {
     if (docket && docket !== "all") {
       query.docketSlug = docket;
     }
-    if (search) {
+    if (author) {
+      const escapedAuthor = author.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       query.$or = [
+        { "author.codename": { $regex: `^${escapedAuthor}$`, $options: "i" } },
+        { "author.name": { $regex: `^${escapedAuthor}$`, $options: "i" } },
+        { "author.email": { $regex: `^${escapedAuthor}$`, $options: "i" } },
+      ];
+    }
+    if (search) {
+      const searchCondition = [
         { title: { $regex: search, $options: "i" } },
         { debriefNarrative: { $regex: search, $options: "i" } },
         { caseNumber: { $regex: search, $options: "i" } },
         { "author.codename": { $regex: search, $options: "i" } },
       ];
+      if (query.$or) {
+        query.$and = [{ $or: query.$or }, { $or: searchCondition }];
+        delete query.$or;
+      } else {
+        query.$or = searchCondition;
+      }
     }
 
     const rawCases = await Post.find(query).lean();
     let finalCases = [...rawCases];
 
-    if (sort === "ai" && rawCases.length > 0) {
+    const isTrending = sort === "trending" || sort === "ai";
+    const isOldest = sort === "old" || sort === "date_asc";
+
+    if (isTrending && rawCases.length > 0) {
       const inputs: PostInput[] = rawCases.map((c: any) => ({
         id: c._id.toString(),
         caseNumber: c.caseNumber || "",
@@ -110,7 +128,7 @@ export async function GET(req: NextRequest) {
           c.aiContributions = rankInfo.featureContributions;
         }
       }
-    } else if (sort === "date_asc") {
+    } else if (isOldest) {
       finalCases.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     } else {
       finalCases.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());

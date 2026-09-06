@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Send, Shield, User, Clock } from "lucide-react";
 import RedactedText from "./RedactedText";
@@ -111,7 +112,17 @@ export default function InvestigatorFieldLog({ caseId }: InvestigatorFieldLogPro
                 <div className="flex items-center justify-between text-[11px] font-mono">
                   <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-slate-100">
                     <User className="w-3 h-3 text-[#c5a059]" />
-                    <span>{entry.authorCodename}</span>
+                    {entry.isAnonymous ? (
+                      <span>{entry.authorCodename}</span>
+                    ) : (
+                      <Link
+                        href={`/profile/${encodeURIComponent(entry.authorCodename || "Operative")}`}
+                        className="hover:underline hover:text-[#071931] dark:hover:text-[#dfb76c] transition-colors"
+                        title="Inspect Operative Dossier"
+                      >
+                        {entry.authorCodename}
+                      </Link>
+                    )}
                     {entry.isAnonymous && (
                       <span className="text-[9px] bg-slate-200 dark:bg-slate-800 px-1 text-slate-600 dark:text-slate-400 rounded-xs font-normal">
                         MASKED

@@ -94,7 +94,14 @@ export default function DocketCard({ post }: DocketCardProps) {
       {/* Card Footer */}
       <div className="mt-4 pt-2 border-t border-[#c8c4b7] dark:border-[#273549] flex items-center justify-between text-[11px] font-mono text-slate-500">
         <div>
-          BY: <span className="text-slate-800 dark:text-slate-200 font-bold">{post.author?.codename}</span>
+          BY:{" "}
+          <Link
+            href={`/profile/${encodeURIComponent(post.author?.codename || "Operative")}`}
+            className="text-slate-800 dark:text-slate-200 font-bold hover:underline hover:text-[#071931] dark:hover:text-[#dfb76c] transition-colors"
+            title="View Operative Profile"
+          >
+            {post.author?.codename || "Operative"}
+          </Link>
         </div>
         <Link
           href={`/post/${caseId}`}

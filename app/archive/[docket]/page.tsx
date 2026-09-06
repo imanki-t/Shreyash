@@ -17,10 +17,11 @@ export default function DocketArchivePage() {
   const [cases, setCases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("trending");
 
   useEffect(() => {
     fetchDocketsAndCases();
-  }, [docketSlug]);
+  }, [docketSlug, sort]);
 
   const fetchDocketsAndCases = async () => {
     setLoading(true);
@@ -41,7 +42,7 @@ export default function DocketArchivePage() {
         }
       );
 
-      const casesRes = await fetch(`/api/files?docket=${docketSlug}`);
+      const casesRes = await fetch(`/api/files?docket=${docketSlug}&sort=${sort}`);
       const casesData = await casesRes.json();
       if (casesData.cases) setCases(casesData.cases);
     } catch (e) {
@@ -101,9 +102,9 @@ export default function DocketArchivePage() {
             </p>
           </div>
 
-          {/* Search Filter Box */}
-          <div className="pt-2">
-            <div className="relative">
+          {/* Search & Sort Filter Box */}
+          <div className="pt-2 flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-1">
               <input
                 type="text"
                 value={search}
@@ -113,6 +114,16 @@ export default function DocketArchivePage() {
               />
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2" />
             </div>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="py-1.5 px-2.5 text-xs bg-white dark:bg-slate-900 border border-[#b8b3a5] dark:border-slate-700 font-mono rounded-xs text-slate-800 dark:text-slate-200 focus:outline-hidden"
+              title="Algorithm Ranking Order"
+            >
+              <option value="trending">🔥 Trending (AI Priority)</option>
+              <option value="new">⚡ Newest First</option>
+              <option value="old">⏳ Oldest First</option>
+            </select>
           </div>
         </div>
 

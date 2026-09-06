@@ -173,7 +173,13 @@ export default function IncidentsTable({ cases, loading = false }: IncidentsTabl
                     </span>
                   </td>
                   <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 text-[11px]">
-                    {c.author.codename || "Operative"}
+                    <Link
+                      href={`/profile/${encodeURIComponent(c.author.codename || "Operative")}`}
+                      className="hover:underline hover:text-[#071931] dark:hover:text-[#dfb76c] font-bold inline-flex items-center gap-1 transition-colors"
+                      title="Inspect Operative Dossier"
+                    >
+                      {c.author.codename || "Operative"}
+                    </Link>
                   </td>
                   <td className="py-2.5 px-3 text-right">
                     <Link
