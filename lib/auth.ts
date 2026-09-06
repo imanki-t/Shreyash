@@ -17,6 +17,11 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 export const authOptions: NextAuthOptions = {
   providers,
   secret: process.env.NEXTAUTH_SECRET || "the-shreyash-files-super-secret-operative-key-2006",
+  session: {
+    strategy: "jwt",
+    maxAge: 7 * 24 * 60 * 60, // Automatically logs out operative after 7 days (604800s)
+    updateAge: 24 * 60 * 60, // Refresh session token if active within 24 hours
+  },
   callbacks: {
     async session({ session, token }) {
       if (session?.user) {
