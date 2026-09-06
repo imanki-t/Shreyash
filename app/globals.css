@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+:root {
+  --bg-primary: #f5f3ec;
+  --bg-card: #ffffff;
+  --bg-header: #071931;
+  --text-main: #1c2430;
+  --text-muted: #576574;
+  --border-federal: #c8c4b7;
+  --gold-accent: #c5a059;
+  --gold-bright: #dfb76c;
+}
+
+[data-theme="dark"] {
+  --bg-primary: #0a0f16;
+  --bg-card: #111822;
+  --bg-header: #050d1a;
+  --text-main: #e2e8f0;
+  --text-muted: #94a3b8;
+  --border-federal: #273549;
+  --gold-accent: #c5a059;
+  --gold-bright: #dfb76c;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  min-height: 100vh;
+}
+
+/* Federal Rubber Stamps */
+.stamp-classified {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  border-width: 2.5px;
+  border-style: solid;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+}
+
+.stamp-red {
+  color: #b91c1c;
+  border-color: #b91c1c;
+  background-color: rgba(185, 28, 28, 0.06);
+}
+
+.stamp-green {
+  color: #15803d;
+  border-color: #15803d;
+  background-color: rgba(21, 128, 61, 0.06);
+}
+
+.stamp-blue {
+  color: #1d4ed8;
+  border-color: #1d4ed8;
+  background-color: rgba(29, 78, 216, 0.06);
+}
+
+.stamp-amber {
+  color: #b45309;
+  border-color: #b45309;
+  background-color: rgba(180, 83, 9, 0.06);
+}
+
+/* Blackout Redaction Marker */
+.redacted-tape {
+  background-color: #000000;
+  color: #000000;
+  user-select: none;
+  padding: 0.05rem 0.35rem;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  display: inline-block;
+  margin: 0 0.15rem;
+}
+
+.redacted-tape:hover,
+.redacted-tape.revealed {
+  background-color: #27272a;
+  color: #fafafa;
+  user-select: auto;
+}
+
+/* 2000s Metallic Bevel Button */
+.btn-metallic {
+  background: linear-gradient(180deg, #f0f2f5 0%, #d4d8e0 50%, #b8bec9 100%);
+  border: 1px solid #7c8798;
+  border-top-color: #ffffff;
+  border-left-color: #ffffff;
+  border-right-color: #647082;
+  border-bottom-color: #4a5568;
+  box-shadow: 1px 1px 0px rgba(0,0,0,0.25), inset 1px 1px 0px #ffffff;
+  color: #1e293b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.05s ease;
+}
+
+.btn-metallic:active {
+  background: linear-gradient(180deg, #b8bec9 0%, #d4d8e0 100%);
+  border-top-color: #4a5568;
+  border-left-color: #647082;
+  border-right-color: #ffffff;
+  border-bottom-color: #ffffff;
+  box-shadow: inset 1px 1px 2px rgba(0,0,0,0.35);
+  transform: translate(1px, 1px);
+}
+
+/* Print Styling */
+@media print {
+  header, nav, .no-print {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .print-document {
+    border: 2px solid black !important;
+    padding: 20px !important;
+    box-shadow: none !important;
+  }
+}

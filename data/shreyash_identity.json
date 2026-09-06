@@ -1,0 +1,70 @@
+{
+  "subjectId": "POI-001-SHREYASH",
+  "legalDesignation": "Shreyash",
+  "operationalCodenames": ["The Architect", "Subject Prime", "Agent Zero-One", "Simulation Drift 404"],
+  "clearanceTier": "LEVEL 4 SURVEILLANCE // RESTRICTED",
+  "activeCoordinates": "Sector Grid Alpha (Home Node / Voice Relay 09)",
+  "assignedInvestigators": [
+    { "codename": "Lead Director", "email": "imitsankit@gmail.com", "role": "Chief Oversight Officer" },
+    { "codename": "Operative Bravo", "role": "Tactical Intelligence & Audio Intercepts" },
+    { "codename": "Operative Charlie", "role": "Surveillance & Visual Analysis" }
+  ],
+  "vitalStatistics": {
+    "height": "5'10\"",
+    "build": "Classified / Standard",
+    "eyeColor": "Brown / Intense Focus",
+    "primaryAffiliation": "Allied Reconnaissance Wing",
+    "threatLevel": "CRITICALLY CHAOTIC (HIGH VARIANCE)"
+  },
+  "verbatimVerbalDisclosures": [
+    {
+      "timestamp": "02:14 UTC",
+      "context": "Virtual Simulation Operations (Explosive Ordinance Deployment)",
+      "statement": "I swear on my life it wasn't supposed to chain-react. It was a controlled architectural detonation.",
+      "classification": "UNVERIFIED EXCUSE"
+    },
+    {
+      "timestamp": "19:42 UTC",
+      "context": "Voice Relay Transmission (Late Night Tactical Debrief)",
+      "statement": "If anyone asks where the emergency rations went, the server suffered a localized data packet loss.",
+      "classification": "CONFIRMED THEFT OF DIGITAL RESOURCES"
+    },
+    {
+      "timestamp": "23:08 UTC",
+      "context": "Multi-Player Engagement (Cross-Fire Sector 4)",
+      "statement": "Trust me on this flank. There is a zero percent probability anyone is guarding the lower corridor.",
+      "classification": "IMMEDIATE CATASTROPHIC FAILURE"
+    },
+    {
+      "timestamp": "01:33 UTC",
+      "context": "Post-Mission Casual Dialogue",
+      "statement": "You guys are honestly the only team I would trust to blow up a base with me.",
+      "classification": "WHOLESOME ENDORSEMENT // DECLASSIFIED"
+    }
+  ],
+  "observedBehavioralAnomalies": [
+    "Compulsive urge to construct monolithic structures without structural foundation calculations.",
+    "Repeatedly enters voice channels at 03:00 UTC without greeting, sighs into the microphone, and disconnects.",
+    "Possesses an uncanny ability to clutch impossible virtual rounds after claiming his controls are completely broken.",
+    "Strong emotional attachment to digital pets; threatens total server retribution if harm occurs."
+  ],
+  "knownAccompliceNetwork": [
+    {
+      "designation": "Director Ankit",
+      "email": "imitsankit@gmail.com",
+      "clearance": "DIRECTORATE // MASTER KEY",
+      "status": "ACTIVE OVERSIGHT"
+    },
+    {
+      "designation": "Field Agent Alpha",
+      "clearance": "SPECIAL INVESTIGATOR",
+      "status": "SURVEILLANCE UNIT 1"
+    },
+    {
+      "designation": "Field Agent Beta",
+      "clearance": "TECHNICAL LIAISON",
+      "status": "SURVEILLANCE UNIT 2"
+    }
+  ],
+  "directorateAssessment": "Subject exhibits high variance between brilliant tactical execution and total administrative pandemonium. Despite multiple documented virtual infractions, Subject remains indispensable to group operations and is recognized as a vital pillar of the Directorate."
+}
