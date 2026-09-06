@@ -4,10 +4,50 @@ import Header from "@/components/Header";
 import SessionProviderWrapper from "@/components/SessionProviderWrapper";
 
 export const metadata: Metadata = {
-  title: "Shreyash Files",
+  metadataBase: new URL("https://departmentofjustice.onrender.com"),
+  title: {
+    default: "Shreyash Files",
+    template: "%s | Shreyash Files",
+  },
   description: "Official federal classified intelligence repository documenting incidents, multi-game virtual simulations, audio intercepts, and subject dossiers.",
+  keywords: [
+    "Shreyash Files",
+    "Shreyash",
+    "Department of Justice",
+    "Central Repository",
+    "Incident Dossiers",
+    "Intelligence Vault",
+    "Federal Parody Archive",
+  ],
   icons: {
     icon: "/favicon.ico",
+  },
+  verification: {
+    google: "Fl7he5CTM-WfEmkaxKGSP_kO1Zv4c50Y572CWl7GnTU",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  openGraph: {
+    title: "Shreyash Files - Central Intelligence Archive",
+    description: "Official federal classified intelligence repository documenting incidents, audio wiretaps, and subject dossiers.",
+    url: "https://departmentofjustice.onrender.com",
+    siteName: "The Shreyash Files",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Shreyash Files",
+    description: "Official federal classified intelligence repository.",
   },
 };
 
